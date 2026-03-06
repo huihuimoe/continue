@@ -13,14 +13,21 @@ describe("LiteConfigLoader", () => {
       settings: {
         enableTabAutocomplete: false,
         enableNextEdit: true,
+        selectedAutocompleteModel: "Backup Autocomplete",
       },
     });
 
+    expect(
+      config.autocompleteModels.map((model) => model.title ?? model.name),
+    ).toEqual(["Fixture Autocomplete", "Backup Autocomplete"]);
+    expect(config.selectedAutocompleteModelTitle).toBe("Backup Autocomplete");
+    expect(config.autocompleteModel?.title).toBe("Backup Autocomplete");
+
     expect(config.autocompleteModel).toEqual({
-      title: "Fixture Autocomplete",
+      title: "Backup Autocomplete",
       provider: "test",
-      model: "fixture-autocomplete",
-      capabilities: ["next_edit"],
+      model: "backup-autocomplete",
+      roles: ["autocomplete"],
     });
     expect(config.tabAutocompleteOptions.disable).toBe(true);
     expect(config.tabAutocompleteOptions.debounceDelay).toBe(123);

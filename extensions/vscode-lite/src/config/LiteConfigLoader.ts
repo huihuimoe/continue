@@ -24,7 +24,12 @@ export class LiteConfigLoader {
       ? await this.loadContinueConfig(options.workspacePath)
       : undefined;
 
-    const autocompleteModel = this.resolveAutocompleteModel(continueConfig);
+    const autocompleteModels = this.resolveAutocompleteModels(continueConfig);
+    const selectedModel = this.resolveSelectedAutocompleteModel(
+      continueConfig,
+      autocompleteModels,
+      options.settings?.selectedAutocompleteModel,
+    );
     const tabAutocompleteOptions = {
       ...(continueConfig?.tabAutocompleteOptions ?? {}),
     } satisfies LiteTabAutocompleteOptions;
@@ -34,7 +39,9 @@ export class LiteConfigLoader {
     }
 
     return {
-      autocompleteModel,
+      autocompleteModels,
+      selectedAutocompleteModelTitle: this.getModelTitle(selectedModel),
+      autocompleteModel: selectedModel,
       tabAutocompleteOptions,
       nextEditEnabled: options.settings?.enableNextEdit ?? true,
     };
@@ -65,21 +72,78 @@ export class LiteConfigLoader {
     return undefined;
   }
 
-  private resolveAutocompleteModel(
+  private resolveAutocompleteModels(
+    config: ContinueJsonLike | undefined,
+  ): LiteAutocompleteModel[] {
+    const models: LiteAutocompleteModel[] = [];
+
+    if (config?.tabAutocompleteModel) {
+      if (Array.isArray(config.tabAutocompleteModel)) {
+        models.push(...config.tabAutocompleteModel);
+      } else {
+        models.push(config.tabAutocompleteModel);
+      }
+    }
+
+    if (config?.models) {
+      models.push(
+        ...config.models.filter((model) =>
+          this.modelHasAutocompleteRole(model),
+        ),
+      );
+    }
+
+    return models;
+  }
+
+  private resolveSelectedAutocompleteModel(
+    config: ContinueJsonLike | undefined,
+    models: LiteAutocompleteModel[],
+    overrideTitle?: string,
+  ): LiteAutocompleteModel | undefined {
+    if (overrideTitle) {
+      const overrideMatch = this.findModelByTitle(models, overrideTitle);
+      if (overrideMatch) {
+        return overrideMatch;
+      }
+    }
+
+    const tabModel = this.resolveTabAutocompleteModel(config);
+    if (tabModel) {
+      return tabModel;
+    }
+
+    return models.find((model) => this.modelHasAutocompleteRole(model));
+  }
+
+  private resolveTabAutocompleteModel(
     config: ContinueJsonLike | undefined,
   ): LiteAutocompleteModel | undefined {
-    const tabAutocompleteModel = config?.tabAutocompleteModel;
-    if (Array.isArray(tabAutocompleteModel)) {
-      return tabAutocompleteModel[0];
+    const candidate = config?.tabAutocompleteModel;
+    if (!candidate) {
+      return undefined;
     }
 
-    if (tabAutocompleteModel) {
-      return tabAutocompleteModel;
+    if (Array.isArray(candidate)) {
+      return candidate[0];
     }
 
-    return config?.models?.find((model) =>
-      model.roles?.includes("autocomplete"),
-    );
+    return candidate;
+  }
+
+  private findModelByTitle(
+    models: LiteAutocompleteModel[],
+    title: string,
+  ): LiteAutocompleteModel | undefined {
+    return models.find((model) => this.getModelTitle(model) === title);
+  }
+
+  private getModelTitle(model?: LiteAutocompleteModel): string | undefined {
+    return model?.title ?? model?.name;
+  }
+
+  private modelHasAutocompleteRole(model: LiteAutocompleteModel): boolean {
+    return Boolean(model.roles?.includes("autocomplete"));
   }
 
   private async exists(filePath: string): Promise<boolean> {

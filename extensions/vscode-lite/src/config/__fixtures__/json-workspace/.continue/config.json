@@ -5,6 +5,12 @@
       "title": "Ignored Chat",
       "provider": "test",
       "model": "ignored-chat"
+    },
+    {
+      "title": "Backup Autocomplete",
+      "provider": "test",
+      "model": "backup-autocomplete",
+      "roles": ["autocomplete"]
     }
   ],
   "tabAutocompleteModel": {
