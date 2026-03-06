@@ -1,0 +1,20 @@
+name: fixture-yaml
+models:
+  - name: YAML Chat
+    provider: openai
+    model: gpt-4.1
+    roles:
+      - chat
+  - name: YAML Autocomplete
+    provider: openai
+    model: gpt-4.1-mini
+    roles:
+      - autocomplete
+    capabilities:
+      - next_edit
+tabAutocompleteOptions:
+  disable: true
+  multilineCompletions: always
+docs:
+  - name: ignored
+    startUrl: https://example.com

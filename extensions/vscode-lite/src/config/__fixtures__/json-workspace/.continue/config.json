@@ -1,0 +1,26 @@
+{
+  "name": "fixture-json",
+  "models": [
+    {
+      "title": "Ignored Chat",
+      "provider": "test",
+      "model": "ignored-chat"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "Fixture Autocomplete",
+    "provider": "test",
+    "model": "fixture-autocomplete",
+    "capabilities": ["next_edit"]
+  },
+  "tabAutocompleteOptions": {
+    "disable": false,
+    "debounceDelay": 123,
+    "useCache": false
+  },
+  "slashCommands": [
+    {
+      "name": "ignored"
+    }
+  ]
+}
