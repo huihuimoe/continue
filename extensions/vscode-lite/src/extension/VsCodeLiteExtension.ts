@@ -12,6 +12,7 @@ import {
   NextEditWindowManager,
   setupNextEditWindowManager,
 } from "../next-edit/NextEditWindowManager";
+import { LiteConfigLoader } from "../config/LiteConfigLoader";
 
 const EXTENSION_NAME = "continue";
 
@@ -25,6 +26,7 @@ export class VsCodeLiteExtension {
     isACConnected: () => true,
     onChangeAC: () => ({ dispose() {} }),
   };
+  private readonly configLoader = new LiteConfigLoader();
   private readonly contextProviders: LiteContextProvider[] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {
@@ -46,7 +48,9 @@ export class VsCodeLiteExtension {
 
     this.context.subscriptions.push(monitorBatteryChanges(this.battery));
 
-    registerAutocompleteCommandsLite(this.context, this.battery);
+    registerAutocompleteCommandsLite(this.context, this.battery, {
+      getAutocompleteMenuState: () => this.getAutocompleteMenuState(),
+    });
 
     setupNextEditWindowManager(this.context);
     JumpManager.getInstance().setup(this.context);
@@ -100,5 +104,27 @@ export class VsCodeLiteExtension {
 
   deactivateNextEdit() {
     this.completionProvider.deactivateNextEdit();
+  }
+
+  private async getAutocompleteMenuState() {
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
+    const settings = {
+      enableTabAutocomplete: config.get<boolean>("enableTabAutocomplete"),
+      enableNextEdit: config.get<boolean>("enableNextEdit"),
+      selectedAutocompleteModel: config.get<string>(
+        "selectedAutocompleteModel",
+      ),
+    };
+
+    const resolved = await this.configLoader.loadConfig({
+      workspacePath,
+      settings,
+    });
+
+    return {
+      models: resolved.autocompleteModels,
+      selectedTitle: resolved.selectedAutocompleteModelTitle,
+    };
   }
 }
