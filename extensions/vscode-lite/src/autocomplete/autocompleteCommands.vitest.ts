@@ -226,6 +226,7 @@ describe("autocomplete commands", () => {
 
   it("keeps autocomplete enabled when paused status is selected", async () => {
     configValues.pauseTabAutocompleteOnBattery = true;
+    configValues.enableTabAutocomplete = false;
 
     registerAutocompleteCommandsLite(
       { subscriptions: [] } as never,
@@ -251,6 +252,66 @@ describe("autocomplete commands", () => {
     quickPickAcceptHandler?.();
 
     expect(updateMock).toHaveBeenCalledWith("enableTabAutocomplete", true, 1);
+  });
+
+  it("does not show enabled option when battery pause is active", async () => {
+    configValues.pauseTabAutocompleteOnBattery = true;
+
+    registerAutocompleteCommandsLite(
+      { subscriptions: [] } as never,
+      { isACConnected: () => false } as never,
+      {
+        getAutocompleteMenuState: async () => ({
+          models: [],
+          selectedIdentity: undefined,
+        }),
+      },
+    );
+
+    const command =
+      registeredCommands["continue.openTabAutocompleteConfigMenu"];
+    await command();
+
+    const items = quickPickInstance!.items;
+    expect(items[0]?.label).toBe(quickPickStatusText(StatusBarStatus.Disabled));
+
+    quickPickInstance!.selectedItems = [items[0]!];
+    quickPickAcceptHandler?.();
+
+    expect(updateMock).toHaveBeenCalledWith("enableTabAutocomplete", false, 1);
+    expect(
+      items.some(
+        (item) => item.label === quickPickStatusText(StatusBarStatus.Enabled),
+      ),
+    ).toBe(false);
+  });
+
+  it("disables autocomplete rather than faking enabled state when paused", async () => {
+    configValues.pauseTabAutocompleteOnBattery = true;
+    configValues.enableTabAutocomplete = true;
+
+    registerAutocompleteCommandsLite(
+      { subscriptions: [] } as never,
+      { isACConnected: () => false } as never,
+      {
+        getAutocompleteMenuState: async () => ({
+          models: [],
+          selectedIdentity: undefined,
+        }),
+      },
+    );
+
+    const command = registeredCommands["continue.toggleTabAutocompleteEnabled"];
+    await command();
+
+    expect(updateMock).toHaveBeenCalledWith("enableTabAutocomplete", false, 1);
+    expect(
+      setupStatusBarSpy.mock.calls.every(
+        (call) => call[0] !== StatusBarStatus.Enabled,
+      ),
+    ).toBe(true);
+    const lastCall = setupStatusBarSpy.mock.calls.slice(-1)[0];
+    expect(lastCall?.[0]).toBe(StatusBarStatus.Disabled);
   });
 
   it("toggles to paused state semantics when on battery", async () => {

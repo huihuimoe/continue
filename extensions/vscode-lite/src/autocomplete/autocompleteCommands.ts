@@ -5,7 +5,6 @@ import {
   getAutocompleteStatusBarDescription,
   getAutocompleteStatusBarTitle,
   getNextEditMenuItems,
-  getStatusBarStatus,
   getStatusBarStatusFromQuickPickItemLabel,
   handleNextEditToggle,
   isNextEditToggleLabel,
@@ -28,6 +27,47 @@ export interface RegisterAutocompleteCommandsLiteOptions {
   getAutocompleteMenuState: () => Promise<LiteAutocompleteMenuState>;
 }
 
+function isBatteryPauseActive(
+  config: vscode.WorkspaceConfiguration,
+  battery: { isACConnected: () => boolean },
+) {
+  return (
+    Boolean(config.get<boolean>("pauseTabAutocompleteOnBattery")) &&
+    !battery.isACConnected()
+  );
+}
+
+function deriveAutocompleteStatus(
+  config: vscode.WorkspaceConfiguration,
+  battery: { isACConnected: () => boolean },
+): StatusBarStatus {
+  const enabled = config.get<boolean>("enableTabAutocomplete");
+  const isEnabled = enabled ?? true;
+
+  if (!isEnabled) {
+    return StatusBarStatus.Disabled;
+  }
+
+  return isBatteryPauseActive(config, battery)
+    ? StatusBarStatus.Paused
+    : StatusBarStatus.Enabled;
+}
+
+function getToggleTargetStatus(
+  currentStatus: StatusBarStatus,
+  pauseActive: boolean,
+) {
+  if (pauseActive) {
+    return currentStatus === StatusBarStatus.Disabled
+      ? StatusBarStatus.Paused
+      : StatusBarStatus.Disabled;
+  }
+
+  return currentStatus === StatusBarStatus.Disabled
+    ? StatusBarStatus.Enabled
+    : StatusBarStatus.Disabled;
+}
+
 export function registerAutocompleteCommandsLite(
   context: vscode.ExtensionContext,
   battery: { isACConnected: () => boolean },
@@ -36,40 +76,23 @@ export function registerAutocompleteCommandsLite(
   const commandsMap: Record<string, () => unknown | Promise<unknown>> = {
     "continue.toggleTabAutocompleteEnabled": () => {
       const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
-      const enabled = config.get<boolean>("enableTabAutocomplete") ?? true;
-      const pauseOnBattery = config.get<boolean>(
-        "pauseTabAutocompleteOnBattery",
-      );
+      const enabled = config.get<boolean>("enableTabAutocomplete");
+      const isEnabled = enabled ?? true;
+      const pauseActive = isBatteryPauseActive(config, battery);
+      const nextEnabled = !isEnabled;
 
-      if (!pauseOnBattery || battery.isACConnected()) {
-        void config.update(
-          "enableTabAutocomplete",
-          !enabled,
-          vscode.ConfigurationTarget.Global,
-        );
-        return;
-      }
-
-      if (enabled) {
-        const paused = getStatusBarStatus() === StatusBarStatus.Paused;
-        if (paused) {
-          setupStatusBar(StatusBarStatus.Enabled);
-        } else {
-          void config.update(
-            "enableTabAutocomplete",
-            false,
-            vscode.ConfigurationTarget.Global,
-          );
-        }
-        return;
-      }
-
-      setupStatusBar(StatusBarStatus.Paused);
       void config.update(
         "enableTabAutocomplete",
-        true,
+        nextEnabled,
         vscode.ConfigurationTarget.Global,
       );
+
+      const nextStatus = nextEnabled
+        ? pauseActive
+          ? StatusBarStatus.Paused
+          : StatusBarStatus.Enabled
+        : StatusBarStatus.Disabled;
+      setupStatusBar(nextStatus);
     },
     "continue.forceAutocomplete": async () => {
       await vscode.commands.executeCommand("editor.action.inlineSuggest.hide");
@@ -99,25 +122,9 @@ export function registerAutocompleteCommandsLite(
           "Continue Lite: Unable to load autocomplete configuration. Showing fallback menu.",
         );
       }
-      const currentStatus = getStatusBarStatus();
-      const pauseOnBattery =
-        config.get<boolean>("pauseTabAutocompleteOnBattery") &&
-        !battery.isACConnected();
-
-      let targetStatus: StatusBarStatus | undefined;
-      if (pauseOnBattery) {
-        targetStatus =
-          currentStatus === StatusBarStatus.Paused
-            ? StatusBarStatus.Enabled
-            : currentStatus === StatusBarStatus.Disabled
-              ? StatusBarStatus.Paused
-              : StatusBarStatus.Disabled;
-      } else {
-        targetStatus =
-          currentStatus === StatusBarStatus.Disabled
-            ? StatusBarStatus.Enabled
-            : StatusBarStatus.Disabled;
-      }
+      const pauseActive = isBatteryPauseActive(config, battery);
+      const currentStatus = deriveAutocompleteStatus(config, battery);
+      const targetStatus = getToggleTargetStatus(currentStatus, pauseActive);
 
       const selectedIdentity = menuState.selectedIdentity;
       const modelItems: ModelQuickPickItem[] = menuState.models.map((model) => {
