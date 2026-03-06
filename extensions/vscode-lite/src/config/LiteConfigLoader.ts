@@ -37,7 +37,7 @@ export class LiteConfigLoader {
     const selectedModel = this.resolveSelectedAutocompleteModel(
       continueConfig,
       autocompleteModels,
-      options.settings?.selectedAutocompleteModel,
+      options.settings?.selectedAutocompleteModelIdentity,
     );
     const tabAutocompleteOptions = {
       ...(continueConfig?.tabAutocompleteOptions ?? {}),
@@ -50,6 +50,7 @@ export class LiteConfigLoader {
     return {
       autocompleteModels,
       selectedAutocompleteModelTitle: this.getModelTitle(selectedModel),
+      selectedAutocompleteModelIdentity: selectedModel?.identity,
       autocompleteModel: selectedModel,
       tabAutocompleteOptions,
       nextEditEnabled: options.settings?.enableNextEdit ?? true,
@@ -93,15 +94,17 @@ export class LiteConfigLoader {
       }
 
       const identity = getAutocompleteModelIdentity(model);
+      const normalizedModel = { ...model, identity };
+
       if (identityToIndex.has(identity)) {
         const existingIndex = identityToIndex.get(identity)!;
         const existing = models[existingIndex];
-        models[existingIndex] = { ...existing, ...model };
+        models[existingIndex] = { ...existing, ...normalizedModel };
         return;
       }
 
       identityToIndex.set(identity, models.length);
-      models.push(model);
+      models.push(normalizedModel);
     };
 
     if (Array.isArray(config?.tabAutocompleteModel)) {
@@ -120,11 +123,11 @@ export class LiteConfigLoader {
   private resolveSelectedAutocompleteModel(
     config: ContinueJsonLike | undefined,
     models: LiteAutocompleteModel[],
-    overrideDisplayName?: string,
+    overrideIdentity?: string,
   ): LiteAutocompleteModel | undefined {
-    if (overrideDisplayName) {
-      const overrideMatch = models.find((model) =>
-        this.matchesDisplayName(model, overrideDisplayName),
+    if (overrideIdentity) {
+      const overrideMatch = models.find(
+        (model) => model.identity === overrideIdentity,
       );
       if (overrideMatch) {
         return overrideMatch;
@@ -135,9 +138,10 @@ export class LiteConfigLoader {
     if (tabModel) {
       const identity = getAutocompleteModelIdentity(tabModel);
       return (
-        models.find(
-          (model) => getAutocompleteModelIdentity(model) === identity,
-        ) ?? tabModel
+        models.find((model) => model.identity === identity) ?? {
+          ...tabModel,
+          identity,
+        }
       );
     }
 
@@ -161,15 +165,6 @@ export class LiteConfigLoader {
 
   private getModelTitle(model?: LiteAutocompleteModel): string | undefined {
     return model?.title ?? model?.name;
-  }
-
-  private matchesDisplayName(
-    model: LiteAutocompleteModel,
-    value: string,
-  ): boolean {
-    const title = model.title ?? "";
-    const name = model.name ?? "";
-    return value === title || value === name;
   }
 
   private modelHasAutocompleteRole(model: LiteAutocompleteModel): boolean {

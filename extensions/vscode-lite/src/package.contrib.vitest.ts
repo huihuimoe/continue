@@ -25,7 +25,7 @@ describe("lite contributes", () => {
         "continue.enableNextEdit",
         "continue.enableTabAutocomplete",
         "continue.pauseTabAutocompleteOnBattery",
-        "continue.selectedAutocompleteModel",
+        "continue.selectedAutocompleteModelIdentity",
       ].sort(),
     );
     expect(pkg.contributes.jsonValidation).toEqual([

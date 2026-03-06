@@ -70,7 +70,7 @@ export class VsCodeLiteExtension {
             `${EXTENSION_NAME}.pauseTabAutocompleteOnBattery`,
           ) ||
           event.affectsConfiguration(
-            `${EXTENSION_NAME}.selectedAutocompleteModel`,
+            `${EXTENSION_NAME}.selectedAutocompleteModelIdentity`,
           ) ||
           event.affectsConfiguration(`${EXTENSION_NAME}.enableNextEdit`);
 
@@ -114,7 +114,7 @@ export class VsCodeLiteExtension {
 
     return {
       models: resolved.autocompleteModels,
-      selectedTitle: resolved.selectedAutocompleteModelTitle,
+      selectedIdentity: resolved.selectedAutocompleteModelIdentity,
     };
   }
 
@@ -124,8 +124,8 @@ export class VsCodeLiteExtension {
     const settings: LiteLoaderSettings = {
       enableTabAutocomplete: config.get<boolean>("enableTabAutocomplete"),
       enableNextEdit: config.get<boolean>("enableNextEdit"),
-      selectedAutocompleteModel: config.get<string>(
-        "selectedAutocompleteModel",
+      selectedAutocompleteModelIdentity: config.get<string>(
+        "selectedAutocompleteModelIdentity",
       ),
     };
 

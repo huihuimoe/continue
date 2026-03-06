@@ -69,6 +69,7 @@ vi.mock("../config/LiteConfigLoader", () => ({
     loadConfig: vi.fn().mockResolvedValue({
       autocompleteModels: [],
       selectedAutocompleteModelTitle: undefined,
+      selectedAutocompleteModelIdentity: undefined,
       tabAutocompleteOptions: {},
       nextEditEnabled: true,
     }),

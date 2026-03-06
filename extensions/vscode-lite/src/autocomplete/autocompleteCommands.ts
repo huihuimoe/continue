@@ -17,9 +17,11 @@ import type { LiteAutocompleteModel } from "../config/types";
 
 const EXTENSION_NAME = "continue";
 
+type ModelQuickPickItem = vscode.QuickPickItem & { identity: string };
+
 export interface LiteAutocompleteMenuState {
   models: LiteAutocompleteModel[];
-  selectedTitle?: string;
+  selectedIdentity?: string;
 }
 
 export interface RegisterAutocompleteCommandsLiteOptions {
@@ -32,16 +34,41 @@ export function registerAutocompleteCommandsLite(
   options: RegisterAutocompleteCommandsLiteOptions,
 ) {
   const commandsMap: Record<string, () => unknown | Promise<unknown>> = {
-    "continue.toggleTabAutocompleteEnabled": async () => {
+    "continue.toggleTabAutocompleteEnabled": () => {
       const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
       const enabled = config.get<boolean>("enableTabAutocomplete") ?? true;
-      await config.update(
-        "enableTabAutocomplete",
-        !enabled,
-        vscode.ConfigurationTarget.Global,
+      const pauseOnBattery = config.get<boolean>(
+        "pauseTabAutocompleteOnBattery",
       );
-      setupStatusBar(
-        !enabled ? StatusBarStatus.Enabled : StatusBarStatus.Disabled,
+
+      if (!pauseOnBattery || battery.isACConnected()) {
+        void config.update(
+          "enableTabAutocomplete",
+          !enabled,
+          vscode.ConfigurationTarget.Global,
+        );
+        return;
+      }
+
+      if (enabled) {
+        const paused = getStatusBarStatus() === StatusBarStatus.Paused;
+        if (paused) {
+          setupStatusBar(StatusBarStatus.Enabled);
+        } else {
+          void config.update(
+            "enableTabAutocomplete",
+            false,
+            vscode.ConfigurationTarget.Global,
+          );
+        }
+        return;
+      }
+
+      setupStatusBar(StatusBarStatus.Paused);
+      void config.update(
+        "enableTabAutocomplete",
+        true,
+        vscode.ConfigurationTarget.Global,
       );
     },
     "continue.forceAutocomplete": async () => {
@@ -55,7 +82,7 @@ export function registerAutocompleteCommandsLite(
       const quickPick = vscode.window.createQuickPick();
       let menuState: LiteAutocompleteMenuState = {
         models: [],
-        selectedTitle: undefined,
+        selectedIdentity: undefined,
       };
 
       try {
@@ -92,19 +119,18 @@ export function registerAutocompleteCommandsLite(
             : StatusBarStatus.Disabled;
       }
 
-      const modelLabelToTitle = new Map<string, string>();
-      const modelItems = menuState.models.map((model) => {
-        const label = getAutocompleteStatusBarTitle(
-          menuState.selectedTitle,
-          model,
-        );
+      const selectedIdentity = menuState.selectedIdentity;
+      const modelItems: ModelQuickPickItem[] = menuState.models.map((model) => {
+        const label = getAutocompleteStatusBarTitle(selectedIdentity, model);
         const description = getAutocompleteStatusBarDescription(
-          menuState.selectedTitle,
+          selectedIdentity,
           model,
         );
-        const canonicalTitle = model.title ?? model.name ?? label;
-        modelLabelToTitle.set(label, canonicalTitle);
-        return { label, description };
+        return {
+          label,
+          description,
+          identity: model.identity ?? "",
+        };
       });
 
       const metaKeyLabel = getMetaKeyLabel();
@@ -126,14 +152,14 @@ export function registerAutocompleteCommandsLite(
       ];
 
       quickPick.onDidAccept(async () => {
-        const selectedOption = quickPick.selectedItems[0]?.label;
-        if (!selectedOption) {
+        const selectedItem = quickPick.selectedItems[0];
+        if (!selectedItem) {
           quickPick.dispose();
           return;
         }
 
-        const nextStatus =
-          getStatusBarStatusFromQuickPickItemLabel(selectedOption);
+        const label = selectedItem.label ?? "";
+        const nextStatus = getStatusBarStatusFromQuickPickItemLabel(label);
 
         if (nextStatus !== undefined) {
           setupStatusBar(nextStatus);
@@ -142,17 +168,18 @@ export function registerAutocompleteCommandsLite(
             nextStatus !== StatusBarStatus.Disabled,
             vscode.ConfigurationTarget.Global,
           );
-        } else if (isNextEditToggleLabel(selectedOption)) {
-          await handleNextEditToggle(selectedOption, config);
-        } else if (modelLabelToTitle.has(selectedOption)) {
-          const selectedModelLabel = modelLabelToTitle.get(selectedOption);
-          if (selectedModelLabel) {
-            await config.update(
-              "selectedAutocompleteModel",
-              selectedModelLabel,
-              vscode.ConfigurationTarget.Global,
-            );
-          }
+        } else if (isNextEditToggleLabel(label)) {
+          await handleNextEditToggle(label, config);
+        } else if (
+          "identity" in selectedItem &&
+          selectedItem.identity &&
+          typeof selectedItem.identity === "string"
+        ) {
+          await config.update(
+            "selectedAutocompleteModelIdentity",
+            selectedItem.identity,
+            vscode.ConfigurationTarget.Global,
+          );
         }
 
         quickPick.dispose();

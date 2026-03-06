@@ -1,12 +1,16 @@
 import * as os from "node:os";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { registerAutocompleteCommandsLite } from "./autocompleteCommands";
-import {
+import * as statusBar from "./statusBar";
+const {
   quickPickStatusText,
-  setupStatusBar,
+  getStatusBarStatus,
+  getStatusBarStatusFromQuickPickItemLabel,
+  handleNextEditToggle,
+  isNextEditToggleLabel,
   StatusBarStatus,
-} from "./statusBar";
+} = statusBar;
 
 type QuickPickAcceptDisposable = {
   dispose: () => void;
@@ -17,6 +21,19 @@ type QuickPickItem = {
   description?: string;
   kind?: number;
 };
+
+function buildModelIdentity(model: {
+  provider?: string;
+  model?: string;
+  title?: string;
+  name?: string;
+}) {
+  const provider = model.provider ?? "";
+  const modelName = model.model ?? "";
+  const title = model.title ?? "";
+  const name = model.name ?? "";
+  return `provider=${provider}|model=${modelName}|title=${title}|name=${name}`;
+}
 
 const configValues: Record<string, unknown> = {
   enableTabAutocomplete: true,
@@ -29,6 +46,7 @@ var configurationMock: {
   get: ReturnType<typeof vi.fn>;
   update: ReturnType<typeof vi.fn>;
 };
+let setupStatusBarSpy: ReturnType<typeof vi.spyOn>;
 
 let registeredCommands: Record<string, (...args: unknown[]) => unknown> = {};
 let quickPickAcceptHandler: (() => void) | undefined;
@@ -113,6 +131,12 @@ describe("autocomplete commands", () => {
     configValues.pauseTabAutocompleteOnBattery = false;
     updateMock?.mockClear();
     configurationMock?.get.mockClear();
+    setupStatusBarSpy = vi.spyOn(statusBar, "setupStatusBar");
+    setupStatusBarSpy.mockClear();
+  });
+
+  afterEach(() => {
+    setupStatusBarSpy.mockRestore();
   });
 
   it("registers only lite command set", async () => {
@@ -122,7 +146,7 @@ describe("autocomplete commands", () => {
       {
         getAutocompleteMenuState: async () => ({
           models: [],
-          selectedTitle: undefined,
+          selectedIdentity: undefined,
         }),
       },
     );
@@ -139,21 +163,33 @@ describe("autocomplete commands", () => {
   });
 
   it("renders the autocomplete menu with status, next edit, separator, and models", async () => {
+    const fixtureModel = {
+      title: "Fixture Autocomplete",
+      provider: "test",
+      model: "fixture-autocomplete",
+    };
+    const backupModel = {
+      title: "Backup Autocomplete",
+      provider: "test",
+      model: "backup-autocomplete",
+    };
+    const selectedIdentity = buildModelIdentity(fixtureModel);
+
     registerAutocompleteCommandsLite(
       { subscriptions: [] } as never,
       { isACConnected: () => true } as never,
       {
         getAutocompleteMenuState: async () => ({
           models: [
-            { title: "Fixture Autocomplete" },
-            { title: "Backup Autocomplete" },
+            { ...fixtureModel, identity: selectedIdentity },
+            { ...backupModel, identity: buildModelIdentity(backupModel) },
           ],
-          selectedTitle: "Fixture Autocomplete",
+          selectedIdentity,
         }),
       },
     );
 
-    setupStatusBar(StatusBarStatus.Enabled);
+    statusBar.setupStatusBar(StatusBarStatus.Enabled);
 
     const command =
       registeredCommands["continue.openTabAutocompleteConfigMenu"];
@@ -182,8 +218,8 @@ describe("autocomplete commands", () => {
     quickPickAcceptHandler?.();
 
     expect(updateMock).toHaveBeenCalledWith(
-      "selectedAutocompleteModel",
-      "Fixture Autocomplete",
+      "selectedAutocompleteModelIdentity",
+      selectedIdentity,
       1,
     );
   });
@@ -197,12 +233,12 @@ describe("autocomplete commands", () => {
       {
         getAutocompleteMenuState: async () => ({
           models: [],
-          selectedTitle: undefined,
+          selectedIdentity: undefined,
         }),
       },
     );
 
-    setupStatusBar(StatusBarStatus.Disabled);
+    statusBar.setupStatusBar(StatusBarStatus.Disabled);
 
     const command =
       registeredCommands["continue.openTabAutocompleteConfigMenu"];
@@ -214,6 +250,30 @@ describe("autocomplete commands", () => {
     quickPickInstance!.selectedItems = [items[0]!];
     quickPickAcceptHandler?.();
 
+    expect(updateMock).toHaveBeenCalledWith("enableTabAutocomplete", true, 1);
+  });
+
+  it("toggles to paused state semantics when on battery", async () => {
+    configValues.pauseTabAutocompleteOnBattery = true;
+    configValues.enableTabAutocomplete = false;
+
+    registerAutocompleteCommandsLite(
+      { subscriptions: [] } as never,
+      { isACConnected: () => false } as never,
+      {
+        getAutocompleteMenuState: async () => ({
+          models: [],
+          selectedIdentity: undefined,
+        }),
+      },
+    );
+
+    const command = registeredCommands["continue.toggleTabAutocompleteEnabled"];
+    statusBar.setupStatusBar(StatusBarStatus.Disabled);
+
+    await command();
+
+    expect(setupStatusBarSpy).toHaveBeenLastCalledWith(StatusBarStatus.Paused);
     expect(updateMock).toHaveBeenCalledWith("enableTabAutocomplete", true, 1);
   });
 

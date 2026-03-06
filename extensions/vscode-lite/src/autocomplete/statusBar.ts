@@ -219,23 +219,22 @@ export function monitorBatteryChanges(battery: {
 }
 
 export function getAutocompleteStatusBarTitle(
-  selected: string | undefined,
-  model: { title?: string; name?: string },
+  selectedIdentity: string | undefined,
+  model: { title?: string; name?: string; identity?: string },
 ) {
   const title = model.title ?? model.name ?? "Unnamed Model";
-  if (title === selected) {
+  if (selectedIdentity && model.identity === selectedIdentity) {
     return `$(check) ${title}`;
   }
   return title;
 }
 
 export function getAutocompleteStatusBarDescription(
-  selected: string | undefined,
-  model: { title?: string; name?: string },
+  selectedIdentity: string | undefined,
+  model: { identity?: string },
 ) {
-  const title = model.title ?? model.name;
-  if (title !== selected) {
-    return undefined;
+  if (selectedIdentity && model.identity === selectedIdentity) {
+    return "Current autocomplete model";
   }
-  return "Current autocomplete model";
+  return undefined;
 }

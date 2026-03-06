@@ -90,14 +90,17 @@ describe("lite status bar", () => {
       getAutocompleteStatusBarDescription,
     } = await import("./statusBar");
 
-    expect(getAutocompleteStatusBarTitle("Model A", { title: "Model A" })).toBe(
+    const identity = "provider=test|model=model-a|title=Model A|name=";
+    const model = { title: "Model A", identity };
+
+    expect(getAutocompleteStatusBarTitle(identity, model)).toBe(
       "$(check) Model A",
     );
+    expect(getAutocompleteStatusBarDescription(identity, model)).toBe(
+      "Current autocomplete model",
+    );
     expect(
-      getAutocompleteStatusBarDescription("Model A", { title: "Model A" }),
-    ).toBe("Current autocomplete model");
-    expect(
-      getAutocompleteStatusBarDescription("Other", { title: "Model A" }),
+      getAutocompleteStatusBarDescription("selected", { identity: "other" }),
     ).toBeUndefined();
   });
 

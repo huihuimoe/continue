@@ -40,10 +40,10 @@
           "default": false,
           "description": "Pause Continue Lite autocomplete when on battery."
         },
-        "continue.selectedAutocompleteModel": {
+        "continue.selectedAutocompleteModelIdentity": {
           "type": "string",
           "default": "",
-          "description": "Selected autocomplete model for Continue Lite."
+          "description": "Selected autocomplete model identity for Continue Lite."
         }
       }
     },

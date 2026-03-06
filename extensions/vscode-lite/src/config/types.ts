@@ -1,4 +1,5 @@
 export interface LiteAutocompleteModel {
+  identity?: string;
   title?: string;
   name?: string;
   provider?: string;
@@ -20,6 +21,7 @@ export interface LiteTabAutocompleteOptions {
 export interface LiteResolvedConfig {
   autocompleteModels: LiteAutocompleteModel[];
   selectedAutocompleteModelTitle?: string;
+  selectedAutocompleteModelIdentity?: string;
   autocompleteModel?: LiteAutocompleteModel;
   tabAutocompleteOptions: LiteTabAutocompleteOptions;
   nextEditEnabled: boolean;
@@ -28,7 +30,7 @@ export interface LiteResolvedConfig {
 export interface LiteLoaderSettings {
   enableTabAutocomplete?: boolean;
   enableNextEdit?: boolean;
-  selectedAutocompleteModel?: string;
+  selectedAutocompleteModelIdentity?: string;
 }
 
 export interface LiteLoadConfigOptions {
