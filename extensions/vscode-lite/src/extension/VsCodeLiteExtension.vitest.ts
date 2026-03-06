@@ -22,7 +22,7 @@ type BatteryMonitorMock = {
 };
 
 let batteryMock: BatteryMonitorMock;
-const createBatteryMonitorMock = vi.fn<[], BatteryMonitorMock>();
+const createBatteryMonitorMock = vi.fn<() => BatteryMonitorMock>();
 
 function createBatteryMock(isAC = true): BatteryMonitorMock {
   return {
