@@ -11,15 +11,16 @@ vi.mock("../autocomplete/completionProvider", () => ({
 
 const setupStatusBarMock = vi.fn();
 const monitorBatteryChangesMock = vi.fn(() => ({ dispose: () => {} }));
-vi.mock("../autocomplete/statusBar", () => ({
-  monitorBatteryChanges: monitorBatteryChangesMock,
-  setupStatusBar: setupStatusBarMock,
-  StatusBarStatus: {
-    Enabled: 0,
-    Disabled: 1,
-    Paused: 2,
-  },
-}));
+vi.mock("../autocomplete/statusBar", async () => {
+  const actual = await vi.importActual<
+    typeof import("../autocomplete/statusBar")
+  >("../autocomplete/statusBar");
+  return {
+    ...actual,
+    monitorBatteryChanges: monitorBatteryChangesMock,
+    setupStatusBar: setupStatusBarMock,
+  };
+});
 
 vi.mock("../autocomplete/autocompleteCommands", () => ({
   registerAutocompleteCommandsLite: vi.fn(),

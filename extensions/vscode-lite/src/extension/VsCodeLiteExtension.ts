@@ -5,6 +5,7 @@ import { ContinueCompletionProvider } from "../autocomplete/completionProvider";
 import {
   monitorBatteryChanges,
   setupStatusBar,
+  stopStatusBarLoading,
   StatusBarStatus,
 } from "../autocomplete/statusBar";
 import { JumpManager } from "../next-edit/JumpManager";
@@ -13,6 +14,7 @@ import {
   setupNextEditWindowManager,
 } from "../next-edit/NextEditWindowManager";
 import { LiteConfigLoader } from "../config/LiteConfigLoader";
+import type { LiteLoaderSettings, LiteResolvedConfig } from "../config/types";
 
 const EXTENSION_NAME = "continue";
 
@@ -33,7 +35,7 @@ export class VsCodeLiteExtension {
     const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
     const nextEditEnabled = config.get<boolean>("enableNextEdit") ?? true;
 
-    setupStatusBar(this.getDesiredStatusStatus());
+    void this.refreshStatusBarState();
 
     this.context.subscriptions.push(
       vscode.languages.registerInlineCompletionItemProvider(
@@ -61,7 +63,21 @@ export class VsCodeLiteExtension {
           return;
         }
 
-        setupStatusBar(this.getDesiredStatusStatus());
+        const shouldRefreshStatusBar =
+          event.affectsConfiguration(
+            `${EXTENSION_NAME}.enableTabAutocomplete`,
+          ) ||
+          event.affectsConfiguration(
+            `${EXTENSION_NAME}.pauseTabAutocompleteOnBattery`,
+          ) ||
+          event.affectsConfiguration(
+            `${EXTENSION_NAME}.selectedAutocompleteModel`,
+          ) ||
+          event.affectsConfiguration(`${EXTENSION_NAME}.enableNextEdit`);
+
+        if (shouldRefreshStatusBar) {
+          void this.refreshStatusBarState();
+        }
 
         if (event.affectsConfiguration(`${EXTENSION_NAME}.enableNextEdit`)) {
           const shouldEnableNextEdit =
@@ -93,26 +109,20 @@ export class VsCodeLiteExtension {
     this.completionProvider.deactivateNextEdit();
   }
 
-  private getDesiredStatusStatus() {
-    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
-    const enabled = config.get<boolean>("enableTabAutocomplete") ?? true;
-    if (!enabled) {
-      return StatusBarStatus.Disabled;
-    }
+  private async getAutocompleteMenuState() {
+    const loaderRequest = this.createLoaderRequest();
+    const resolved = await this.configLoader.loadConfig(loaderRequest);
 
-    const pauseOnBattery =
-      config.get<boolean>("pauseTabAutocompleteOnBattery") ?? false;
-    if (pauseOnBattery && !this.battery.isACConnected()) {
-      return StatusBarStatus.Paused;
-    }
-
-    return StatusBarStatus.Enabled;
+    return {
+      models: resolved.autocompleteModels,
+      selectedTitle: resolved.selectedAutocompleteModelTitle,
+    };
   }
 
-  private async getAutocompleteMenuState() {
+  private createLoaderRequest() {
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
-    const settings = {
+    const settings: LiteLoaderSettings = {
       enableTabAutocomplete: config.get<boolean>("enableTabAutocomplete"),
       enableNextEdit: config.get<boolean>("enableNextEdit"),
       selectedAutocompleteModel: config.get<string>(
@@ -120,14 +130,46 @@ export class VsCodeLiteExtension {
       ),
     };
 
-    const resolved = await this.configLoader.loadConfig({
-      workspacePath,
-      settings,
-    });
+    return { workspacePath, settings };
+  }
 
-    return {
-      models: resolved.autocompleteModels,
-      selectedTitle: resolved.selectedAutocompleteModelTitle,
-    };
+  private async refreshStatusBarState() {
+    const loaderRequest = this.createLoaderRequest();
+    setupStatusBar(undefined, true, false);
+
+    try {
+      const resolved = await this.configLoader.loadConfig(loaderRequest);
+      setupStatusBar(
+        this.getStatusBarStatusFromResolved(resolved),
+        false,
+        false,
+      );
+    } catch (error) {
+      setupStatusBar(undefined, false, true);
+      console.error(
+        "Continue Lite: failed to refresh autocomplete status",
+        error,
+      );
+    } finally {
+      stopStatusBarLoading();
+    }
+  }
+
+  private getStatusBarStatusFromResolved(
+    resolved: LiteResolvedConfig,
+  ): StatusBarStatus {
+    if (resolved.tabAutocompleteOptions.disable) {
+      return StatusBarStatus.Disabled;
+    }
+
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
+    const pauseOnBattery =
+      config.get<boolean>("pauseTabAutocompleteOnBattery") ?? false;
+
+    if (pauseOnBattery && !this.battery.isACConnected()) {
+      return StatusBarStatus.Paused;
+    }
+
+    return StatusBarStatus.Enabled;
   }
 }

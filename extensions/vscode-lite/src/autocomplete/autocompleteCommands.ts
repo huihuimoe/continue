@@ -53,10 +53,25 @@ export function registerAutocompleteCommandsLite(
     "continue.openTabAutocompleteConfigMenu": async () => {
       const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
       const quickPick = vscode.window.createQuickPick();
-      const menuState = (await options.getAutocompleteMenuState()) ?? {
+      let menuState: LiteAutocompleteMenuState = {
         models: [],
         selectedTitle: undefined,
       };
+
+      try {
+        const loadedMenuState = await options.getAutocompleteMenuState();
+        if (loadedMenuState) {
+          menuState = loadedMenuState;
+        }
+      } catch (error) {
+        console.error(
+          "Continue Lite: failed to load autocomplete menu state",
+          error,
+        );
+        void vscode.window.showWarningMessage(
+          "Continue Lite: Unable to load autocomplete configuration. Showing fallback menu.",
+        );
+      }
       const currentStatus = getStatusBarStatus();
       const pauseOnBattery =
         config.get<boolean>("pauseTabAutocompleteOnBattery") &&

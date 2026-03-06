@@ -81,6 +81,7 @@ vi.mock("vscode", () => {
     window: {
       createQuickPick: vi.fn(createQuickPick),
       showInformationMessage: vi.fn(),
+      showWarningMessage: vi.fn(),
       createStatusBarItem: vi.fn(() => ({
         show: vi.fn(),
         hide: vi.fn(),
@@ -214,5 +215,27 @@ describe("autocomplete commands", () => {
     quickPickAcceptHandler?.();
 
     expect(updateMock).toHaveBeenCalledWith("enableTabAutocomplete", true, 1);
+  });
+
+  it("falls back to a base menu when loader fails", async () => {
+    registerAutocompleteCommandsLite(
+      { subscriptions: [] } as never,
+      { isACConnected: () => true } as never,
+      {
+        getAutocompleteMenuState: async () => {
+          throw new Error("boom");
+        },
+      },
+    );
+
+    const command =
+      registeredCommands["continue.openTabAutocompleteConfigMenu"];
+
+    await expect(command()).resolves.toBeUndefined();
+
+    expect(quickPickInstance).toBeDefined();
+    const items = quickPickInstance!.items;
+    expect(items[0]?.label).toBe(quickPickStatusText(StatusBarStatus.Disabled));
+    expect(items.length).toBeGreaterThanOrEqual(1);
   });
 });
