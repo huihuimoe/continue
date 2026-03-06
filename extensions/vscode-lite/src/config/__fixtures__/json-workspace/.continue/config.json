@@ -13,12 +13,19 @@
       "roles": ["autocomplete"]
     }
   ],
-  "tabAutocompleteModel": {
-    "title": "Fixture Autocomplete",
-    "provider": "test",
-    "model": "fixture-autocomplete",
-    "capabilities": ["next_edit"]
-  },
+  "tabAutocompleteModel": [
+    {
+      "title": "Fixture Autocomplete",
+      "provider": "test",
+      "model": "fixture-autocomplete",
+      "capabilities": ["next_edit"]
+    },
+    {
+      "title": "Backup Autocomplete",
+      "provider": "test",
+      "model": "backup-autocomplete"
+    }
+  ],
   "tabAutocompleteOptions": {
     "disable": false,
     "debounceDelay": 123,

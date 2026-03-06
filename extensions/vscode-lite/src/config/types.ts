@@ -5,6 +5,7 @@ export interface LiteAutocompleteModel {
   model?: string;
   roles?: string[];
   capabilities?: string[];
+  identity?: string;
   [key: string]: unknown;
 }
 
@@ -20,6 +21,7 @@ export interface LiteTabAutocompleteOptions {
 export interface LiteResolvedConfig {
   autocompleteModels: LiteAutocompleteModel[];
   selectedAutocompleteModelTitle?: string;
+  selectedAutocompleteModelId?: string;
   autocompleteModel?: LiteAutocompleteModel;
   tabAutocompleteOptions: LiteTabAutocompleteOptions;
   nextEditEnabled: boolean;
