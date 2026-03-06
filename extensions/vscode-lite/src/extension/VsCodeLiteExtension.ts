@@ -15,6 +15,7 @@ import {
 } from "../next-edit/NextEditWindowManager";
 import { LiteConfigLoader } from "../config/LiteConfigLoader";
 import type { LiteLoaderSettings, LiteResolvedConfig } from "../config/types";
+import { createBatteryMonitor } from "../util/battery";
 
 const EXTENSION_NAME = "continue";
 
@@ -24,10 +25,7 @@ export interface LiteContextProvider {
 
 export class VsCodeLiteExtension {
   private readonly completionProvider = new ContinueCompletionProvider();
-  private readonly battery = {
-    isACConnected: () => true,
-    onChangeAC: () => ({ dispose() {} }),
-  };
+  private readonly battery = createBatteryMonitor();
   private readonly configLoader = new LiteConfigLoader();
   private readonly contextProviders: LiteContextProvider[] = [];
 
@@ -45,6 +43,7 @@ export class VsCodeLiteExtension {
     );
 
     this.context.subscriptions.push(monitorBatteryChanges(this.battery));
+    this.context.subscriptions.push({ dispose: () => this.battery.dispose() });
 
     registerAutocompleteCommandsLite(this.context, this.battery, {
       getAutocompleteMenuState: () => this.getAutocompleteMenuState(),
