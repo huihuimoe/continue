@@ -1,8 +1,10 @@
 import * as vscode from "vscode";
+import * as os from "node:os";
 
 const EXTENSION_NAME = "continue";
-const ENABLE_NEXT_EDIT_LABEL = "$(sparkle) Enable Next Edit";
-const DISABLE_NEXT_EDIT_LABEL = "$(circle-slash) Disable Next Edit";
+const USE_FIM_MENU_ITEM_LABEL = "$(export) Use FIM autocomplete over Next Edit";
+const USE_NEXT_EDIT_MENU_ITEM_LABEL =
+  "$(sparkle) Use Next Edit over FIM autocomplete";
 
 export enum StatusBarStatus {
   Disabled,
@@ -12,16 +14,19 @@ export enum StatusBarStatus {
 
 let statusBarStatus: StatusBarStatus | undefined;
 let statusBarItem: vscode.StatusBarItem | undefined;
+let statusBarFalseTimeout: NodeJS.Timeout | undefined;
+let statusBarError = false;
 
 export function quickPickStatusText(status: StatusBarStatus | undefined) {
   switch (status) {
-    case StatusBarStatus.Enabled:
-      return "$(circle-slash) Disable autocomplete";
-    case StatusBarStatus.Paused:
-      return "$(play) Resume autocomplete";
     case StatusBarStatus.Disabled:
-    case undefined:
+      return "$(circle-slash) Disable autocomplete";
+    case StatusBarStatus.Enabled:
       return "$(check) Enable autocomplete";
+    case StatusBarStatus.Paused:
+      return "$(debug-pause) Pause autocomplete";
+    default:
+      return "$(circle-slash) Disable autocomplete";
   }
 }
 
@@ -31,33 +36,44 @@ export function getStatusBarStatus() {
 
 export function getStatusBarStatusFromQuickPickItemLabel(label: string) {
   switch (label) {
-    case "$(check) Enable autocomplete":
-    case "$(play) Resume autocomplete":
-      return StatusBarStatus.Enabled;
     case "$(circle-slash) Disable autocomplete":
       return StatusBarStatus.Disabled;
+    case "$(check) Enable autocomplete":
+      return StatusBarStatus.Enabled;
+    case "$(debug-pause) Pause autocomplete":
+      return StatusBarStatus.Paused;
     default:
       return undefined;
   }
 }
 
+function getMetaKeyLabel() {
+  const platform = os.platform();
+  return platform === "darwin" ? "⌘" : "Ctrl";
+}
+
 export function getNextEditMenuItems(
   currentStatus: StatusBarStatus | undefined,
   nextEditEnabled: boolean,
-) {
+): vscode.QuickPickItem[] {
   if (currentStatus !== StatusBarStatus.Enabled) {
     return [];
   }
 
   return [
     {
-      label: nextEditEnabled ? DISABLE_NEXT_EDIT_LABEL : ENABLE_NEXT_EDIT_LABEL,
+      label: nextEditEnabled
+        ? USE_FIM_MENU_ITEM_LABEL
+        : USE_NEXT_EDIT_MENU_ITEM_LABEL,
+      description: `${getMetaKeyLabel()} + K, ${getMetaKeyLabel()} + N`,
     },
   ];
 }
 
 export function isNextEditToggleLabel(label: string) {
-  return label === ENABLE_NEXT_EDIT_LABEL || label === DISABLE_NEXT_EDIT_LABEL;
+  return (
+    label === USE_FIM_MENU_ITEM_LABEL || label === USE_NEXT_EDIT_MENU_ITEM_LABEL
+  );
 }
 
 export async function handleNextEditToggle(
@@ -66,40 +82,150 @@ export async function handleNextEditToggle(
 ) {
   await config.update(
     "enableNextEdit",
-    label === ENABLE_NEXT_EDIT_LABEL,
+    label === USE_NEXT_EDIT_MENU_ITEM_LABEL,
     vscode.ConfigurationTarget.Global,
   );
 }
 
-export function setupStatusBar(status: StatusBarStatus | undefined) {
+export function stopStatusBarLoading() {
+  statusBarFalseTimeout = setTimeout(() => {
+    setupStatusBar(StatusBarStatus.Enabled, false);
+  }, 100);
+}
+
+export function statusBarItemText(
+  status: StatusBarStatus | undefined,
+  loading?: boolean,
+  error?: boolean,
+) {
+  if (error) {
+    return "$(alert) Continue Lite (config error)";
+  }
+
+  let text: string;
+  switch (status) {
+    case StatusBarStatus.Disabled:
+      text = "$(circle-slash) Continue Lite";
+      break;
+    case StatusBarStatus.Enabled:
+      text = "$(check) Continue Lite";
+      break;
+    case StatusBarStatus.Paused:
+      text = "$(debug-pause) Continue Lite";
+      break;
+    default:
+      if (loading) {
+        text = "$(loading~spin) Continue Lite";
+      } else {
+        text = "Continue Lite";
+      }
+  }
+
+  const nextEditEnabled =
+    vscode.workspace
+      .getConfiguration(EXTENSION_NAME)
+      .get<boolean>("enableNextEdit") ?? false;
+  if (nextEditEnabled) {
+    text += " (NE)";
+  }
+
+  return text;
+}
+
+export function statusBarItemTooltip(status: StatusBarStatus | undefined) {
+  switch (status) {
+    case StatusBarStatus.Enabled: {
+      const nextEditEnabled =
+        vscode.workspace
+          .getConfiguration(EXTENSION_NAME)
+          .get<boolean>("enableNextEdit") ?? false;
+      return nextEditEnabled
+        ? "Next Edit is enabled"
+        : "Tab autocomplete is enabled";
+    }
+    case StatusBarStatus.Paused:
+      return "Tab autocomplete is paused";
+    default:
+      return "Click to enable tab autocomplete";
+  }
+}
+
+export function setupStatusBar(
+  status: StatusBarStatus | undefined,
+  loading?: boolean,
+  error?: boolean,
+) {
+  if (loading !== false) {
+    clearTimeout(statusBarFalseTimeout);
+    statusBarFalseTimeout = undefined;
+  }
+
   if (!statusBarItem) {
     statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
     );
   }
 
-  statusBarStatus = status;
-  statusBarItem.text =
-    status === StatusBarStatus.Enabled
-      ? "$(check) Continue Lite"
-      : "$(circle-slash) Continue Lite";
-  statusBarItem.tooltip = "Continue Lite autocomplete controls";
+  if (error !== undefined) {
+    statusBarError = error;
+    if (status === undefined) {
+      status = statusBarStatus;
+    }
+    if (loading === undefined) {
+      loading = false;
+    }
+  }
+
+  statusBarItem.text = statusBarItemText(status, loading, statusBarError);
+  statusBarItem.tooltip = statusBarItemTooltip(status ?? statusBarStatus);
   statusBarItem.command = "continue.openTabAutocompleteConfigMenu";
   statusBarItem.show();
+
+  if (status !== undefined) {
+    statusBarStatus = status;
+  }
 }
 
 export function monitorBatteryChanges(battery: {
   onChangeAC?: (listener: (connected: boolean) => void) => vscode.Disposable;
 }) {
   return (
-    battery.onChangeAC?.(() => {
-      const enabled =
-        vscode.workspace
-          .getConfiguration(EXTENSION_NAME)
-          .get<boolean>("enableTabAutocomplete") ?? true;
+    battery.onChangeAC?.((connected) => {
+      const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
+      const enabled = config.get<boolean>("enableTabAutocomplete") ?? true;
+      if (!enabled) {
+        setupStatusBar(StatusBarStatus.Disabled);
+        return;
+      }
+      const pauseOnBattery =
+        config.get<boolean>("pauseTabAutocompleteOnBattery") ?? false;
       setupStatusBar(
-        enabled ? StatusBarStatus.Enabled : StatusBarStatus.Disabled,
+        connected || !pauseOnBattery
+          ? StatusBarStatus.Enabled
+          : StatusBarStatus.Paused,
       );
     }) ?? { dispose() {} }
   );
+}
+
+export function getAutocompleteStatusBarTitle(
+  selected: string | undefined,
+  model: { title?: string; name?: string },
+) {
+  const title = model.title ?? model.name ?? "Unnamed Model";
+  if (title === selected) {
+    return `$(check) ${title}`;
+  }
+  return title;
+}
+
+export function getAutocompleteStatusBarDescription(
+  selected: string | undefined,
+  model: { title?: string; name?: string },
+) {
+  const title = model.title ?? model.name;
+  if (title !== selected) {
+    return undefined;
+  }
+  return "Current autocomplete model";
 }
