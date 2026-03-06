@@ -75,6 +75,15 @@ describe("lite status bar", () => {
     expect(statusBarItem.text).toContain("config error");
   });
 
+  it("renders disabled state text and tooltip", async () => {
+    const { setupStatusBar, StatusBarStatus } = await import("./statusBar");
+
+    setupStatusBar(StatusBarStatus.Disabled);
+
+    expect(statusBarItem.text).toContain("$(circle-slash) Continue Lite");
+    expect(statusBarItem.tooltip).toBe("Click to enable tab autocomplete");
+  });
+
   it("provides model title and description helpers", async () => {
     const {
       getAutocompleteStatusBarTitle,
