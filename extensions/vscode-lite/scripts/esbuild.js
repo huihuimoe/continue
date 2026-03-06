@@ -2,7 +2,7 @@ const esbuild = require("esbuild");
 
 const flags = process.argv.slice(2);
 
-void esbuild.build({
+const esbuildConfig = {
   entryPoints: ["src/extension.ts"],
   bundle: true,
   outfile: "out/extension.js",
@@ -17,4 +17,26 @@ void esbuild.build({
   banner: {
     js: '"use strict";',
   },
-});
+  plugins: [
+    {
+      name: "lite-build-finished",
+      setup(build) {
+        build.onEnd((result) => {
+          if (result.errors.length === 0) {
+            console.log("VS Code Lite Extension esbuild complete");
+          }
+        });
+      },
+    },
+  ],
+};
+
+void (async () => {
+  if (flags.includes("--watch")) {
+    const context = await esbuild.context(esbuildConfig);
+    await context.watch();
+    return;
+  }
+
+  await esbuild.build(esbuildConfig);
+})();

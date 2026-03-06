@@ -27,6 +27,25 @@
       }
     },
     {
+      "name": "Launch vscode-lite extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/extensions/vscode-lite",
+      "args": [
+        "${workspaceFolder}/manual-testing-sandbox",
+        "${workspaceFolder}/manual-testing-sandbox/test.js",
+        "--extensionDevelopmentPath=${workspaceFolder}/extensions/vscode-lite"
+      ],
+      "pauseForSourceMap": false,
+      "outFiles": [
+        "${workspaceFolder}/extensions/vscode-lite/out/extension.js"
+      ],
+      "preLaunchTask": "vscode-lite-extension:build",
+      "env": {
+        "CONTINUE_GLOBAL_DIR": "${workspaceFolder}/extensions/.continue-debug-lite"
+      }
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Core Binary",

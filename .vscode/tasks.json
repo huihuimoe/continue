@@ -105,6 +105,57 @@
       ]
     },
     {
+      "label": "tsc:watch:vscode-lite",
+      "type": "npm",
+      "script": "tsc:watch:vscode-lite",
+      "isBackground": true,
+      "problemMatcher": ["$tsc-watch"],
+      "presentation": {
+        "group": "dev-watchers",
+        "panel": "dedicated",
+        "reveal": "silent"
+      }
+    },
+    {
+      "label": "vscode-lite-extension:build",
+      "dependsOn": ["tsc:watch:vscode-lite", "vscode-lite-extension:esbuild"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "vscode-lite-extension:esbuild",
+      "type": "npm",
+      "script": "esbuild-watch",
+      "path": "extensions/vscode-lite",
+      "isBackground": true,
+      "presentation": {
+        "group": "dev-watchers",
+        "panel": "dedicated",
+        "reveal": "silent"
+      },
+      "problemMatcher": [
+        {
+          "pattern": [
+            {
+              "regexp": "> (.*?):([0-9]+):([0-9]+): (warning|error): (.+)$",
+              "file": 1,
+              "line": 2,
+              "column": 3,
+              "severity": 4,
+              "message": 5
+            }
+          ],
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ">",
+            "endsPattern": "VS Code Lite Extension esbuild complete"
+          }
+        }
+      ]
+    },
+    {
       "label": "vscode-extension:continue-ui:build",
       "type": "shell",
       "command": "node",
@@ -249,6 +300,22 @@
       }
     },
     {
+      "label": "refresh-dependencies:vscode-lite",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/extensions/vscode-lite"
+      },
+      "presentation": {
+        "group": "maintenance",
+        "panel": "shared",
+        "reveal": "silent",
+        "close": true
+      }
+    },
+    {
       "label": "refresh-dependencies:gui",
       "type": "shell",
       "command": "npm",
@@ -269,7 +336,8 @@
       "dependsOn": [
         "refresh-dependencies:core",
         "refresh-dependencies:gui",
-        "refresh-dependencies:vscode"
+        "refresh-dependencies:vscode",
+        "refresh-dependencies:vscode-lite"
       ],
       "type": "shell",
       "problemMatcher": [],

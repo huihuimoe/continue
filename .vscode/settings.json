@@ -38,6 +38,7 @@
     "extensions/vscode/tag-qry/**": true,
     "extensions/vscode/textmate-syntaxes/**": true,
     "extensions/vscode/tree-sitter/**": true,
+    "extensions/vscode-lite/out/**": true,
     "gui/dist/**": true,
     "extensions/vscode/e2e/.test-extensions": true,
     "extensions/vscode/e2e/_output": true,
@@ -55,5 +56,6 @@
   "conventionalCommits.promptBody": false,
   "conventionalCommits.promptFooter": false,
   "conventionalCommits.promptScopes": true,
-  "conventionalCommits.scopes": ["reg"]
+  "conventionalCommits.scopes": ["reg"],
+  "eslint.enable": false
 }
