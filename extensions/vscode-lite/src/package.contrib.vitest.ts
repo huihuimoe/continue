@@ -43,4 +43,15 @@ describe("lite contributes", () => {
       },
     ]);
   });
+
+  it("includes release-ready packaging metadata", () => {
+    expect(pkg.publisher).toBeTruthy();
+    expect(pkg.license).toBeTruthy();
+    expect(pkg.repository).toBeTruthy();
+    expect(pkg.homepage).toBeTruthy();
+    expect(pkg.bugs).toBeTruthy();
+    expect(pkg.categories?.length).toBeGreaterThan(0);
+    expect(pkg.keywords?.length).toBeGreaterThan(0);
+    expect(pkg.icon).toBeTruthy();
+  });
 });

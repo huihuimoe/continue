@@ -4,6 +4,27 @@
   "description": "Lightweight Continue extension for autocomplete and next edit",
   "version": "0.0.1",
   "private": true,
+  "publisher": "continuedev",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/continuedev/continue.git"
+  },
+  "homepage": "https://github.com/continuedev/continue",
+  "bugs": {
+    "url": "https://github.com/continuedev/continue/issues"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "autocomplete",
+    "inline-completions",
+    "next-edit",
+    "continue"
+  ],
+  "icon": "media/icon.png",
   "main": "./out/extension.js",
   "engines": {
     "vscode": "^1.70.0",
