@@ -20,6 +20,128 @@
     "vitest": "vitest run",
     "build": "npm run esbuild"
   },
+  "contributes": {
+    "configuration": {
+      "title": "Continue Lite",
+      "properties": {
+        "continue.enableTabAutocomplete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Continue Lite autocomplete."
+        },
+        "continue.enableNextEdit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Continue Lite next edit."
+        },
+        "continue.pauseTabAutocompleteOnBattery": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause Continue Lite autocomplete when on battery."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "continue.toggleTabAutocompleteEnabled",
+        "category": "Continue Lite",
+        "title": "Continue Lite: Toggle Autocomplete Enabled"
+      },
+      {
+        "command": "continue.forceAutocomplete",
+        "category": "Continue Lite",
+        "title": "Continue Lite: Force Autocomplete"
+      },
+      {
+        "command": "continue.openTabAutocompleteConfigMenu",
+        "category": "Continue Lite",
+        "title": "Continue Lite: Open Autocomplete Menu"
+      },
+      {
+        "command": "continue.toggleNextEditEnabled",
+        "category": "Continue Lite",
+        "title": "Continue Lite: Toggle Next Edit"
+      },
+      {
+        "command": "continue.forceNextEdit",
+        "category": "Continue Lite",
+        "title": "Continue Lite: Force Next Edit"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "continue.toggleTabAutocompleteEnabled",
+        "key": "ctrl+k ctrl+a",
+        "mac": "cmd+k cmd+a",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "continue.forceAutocomplete",
+        "key": "ctrl+alt+space",
+        "mac": "cmd+alt+space",
+        "when": "editorTextFocus && !editorHasSelection && !editorReadOnly && !inSnippetMode"
+      },
+      {
+        "command": "continue.toggleNextEditEnabled",
+        "key": "ctrl+k ctrl+n",
+        "mac": "cmd+k cmd+n",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "continue.nextEditWindow.hideNextEditSuggestion",
+        "key": "escape",
+        "when": "editorTextFocus && nextEditWindowActive && !continue.jumpDecorationVisible"
+      },
+      {
+        "command": "continue.nextEditWindow.acceptNextEditSuggestion",
+        "key": "tab",
+        "when": "editorTextFocus && nextEditWindowActive && !continue.jumpDecorationVisible"
+      },
+      {
+        "command": "continue.acceptJump",
+        "key": "tab",
+        "when": "editorTextFocus && continue.jumpDecorationVisible"
+      },
+      {
+        "command": "continue.rejectJump",
+        "key": "escape",
+        "when": "editorTextFocus && continue.jumpDecorationVisible"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "continue.openTabAutocompleteConfigMenu"
+        },
+        {
+          "command": "continue.toggleTabAutocompleteEnabled"
+        },
+        {
+          "command": "continue.forceAutocomplete"
+        },
+        {
+          "command": "continue.toggleNextEditEnabled"
+        },
+        {
+          "command": "continue.forceNextEdit"
+        }
+      ]
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "**/.continue*/config.json",
+        "url": "./config_schema.json"
+      },
+      {
+        "fileMatch": ".continuerc.json",
+        "url": "./continue_rc_schema.json"
+      },
+      {
+        "fileMatch": "**/config.yaml",
+        "url": "./config-yaml-schema.json"
+      }
+    ]
+  },
   "devDependencies": {
     "@types/node": "^20.19.12",
     "@types/vscode": "1.70.0",

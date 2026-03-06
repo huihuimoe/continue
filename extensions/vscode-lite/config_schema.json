@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "tabAutocompleteModel": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/model"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/model"
+          }
+        }
+      ]
+    },
+    "tabAutocompleteOptions": {
+      "$ref": "#/$defs/tabAutocompleteOptions"
+    }
+  },
+  "$defs": {
+    "model": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "tabAutocompleteOptions": {
+      "type": "object",
+      "properties": {
+        "disable": { "type": "boolean" },
+        "debounceDelay": { "type": "number" },
+        "multilineCompletions": {
+          "type": "string",
+          "enum": ["always", "never", "auto"]
+        },
+        "useCache": { "type": "boolean" },
+        "disableInFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
