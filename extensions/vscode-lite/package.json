@@ -16,9 +16,10 @@
     "esbuild-base": "node scripts/esbuild.js",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "size-check": "node scripts/size-check.js",
     "tsc:check": "tsc -p ./ --noEmit",
     "vitest": "vitest run",
-    "build": "npm run esbuild"
+    "build": "npm run esbuild && npm run size-check"
   },
   "contributes": {
     "configuration": {

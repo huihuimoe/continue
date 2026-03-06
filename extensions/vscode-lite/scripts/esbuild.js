@@ -1,3 +1,4 @@
+const fs = require("fs");
 const esbuild = require("esbuild");
 
 const flags = process.argv.slice(2);
@@ -12,6 +13,7 @@ const esbuildConfig = {
   sourcemap: flags.includes("--sourcemap"),
   minify: flags.includes("--minify"),
   logLevel: "info",
+  metafile: true,
   packages: "external",
   tsconfig: "tsconfig.json",
   banner: {
@@ -23,6 +25,11 @@ const esbuildConfig = {
       setup(build) {
         build.onEnd((result) => {
           if (result.errors.length === 0) {
+            fs.mkdirSync("build", { recursive: true });
+            fs.writeFileSync(
+              "build/meta.json",
+              JSON.stringify(result.metafile, null, 2),
+            );
             console.log("VS Code Lite Extension esbuild complete");
           }
         });
