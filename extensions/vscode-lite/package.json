@@ -1,0 +1,30 @@
+{
+  "name": "continue-vscode-lite",
+  "displayName": "Continue Lite",
+  "description": "Lightweight Continue extension for autocomplete and next edit",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./out/extension.js",
+  "engines": {
+    "vscode": "^1.70.0",
+    "node": ">=20.19.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "scripts": {
+    "esbuild-base": "node scripts/esbuild.js",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "tsc:check": "tsc -p ./ --noEmit",
+    "vitest": "vitest run",
+    "build": "npm run esbuild"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.12",
+    "@types/vscode": "1.70.0",
+    "esbuild": "^0.25.9",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.3"
+  }
+}
