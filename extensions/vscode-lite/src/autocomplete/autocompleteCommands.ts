@@ -124,7 +124,7 @@ export function registerAutocompleteCommandsLite(
           setupStatusBar(nextStatus);
           await config.update(
             "enableTabAutocomplete",
-            nextStatus === StatusBarStatus.Enabled,
+            nextStatus !== StatusBarStatus.Disabled,
             vscode.ConfigurationTarget.Global,
           );
         } else if (isNextEditToggleLabel(selectedOption)) {

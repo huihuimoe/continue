@@ -30,14 +30,7 @@ export class VsCodeLiteExtension {
   private readonly contextProviders: LiteContextProvider[] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {
-    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
-    const autocompleteEnabled =
-      config.get<boolean>("enableTabAutocomplete") ?? true;
-    const nextEditEnabled = config.get<boolean>("enableNextEdit") ?? true;
-
-    setupStatusBar(
-      autocompleteEnabled ? StatusBarStatus.Enabled : StatusBarStatus.Disabled,
-    );
+    setupStatusBar(this.getDesiredStatusStatus());
 
     this.context.subscriptions.push(
       vscode.languages.registerInlineCompletionItemProvider(
@@ -65,16 +58,7 @@ export class VsCodeLiteExtension {
           return;
         }
 
-        const nextAutocompleteEnabled =
-          vscode.workspace
-            .getConfiguration(EXTENSION_NAME)
-            .get<boolean>("enableTabAutocomplete") ?? true;
-
-        setupStatusBar(
-          nextAutocompleteEnabled
-            ? StatusBarStatus.Enabled
-            : StatusBarStatus.Disabled,
-        );
+        setupStatusBar(this.getDesiredStatusStatus());
 
         if (event.affectsConfiguration(`${EXTENSION_NAME}.enableNextEdit`)) {
           const shouldEnableNextEdit =
@@ -104,6 +88,22 @@ export class VsCodeLiteExtension {
 
   deactivateNextEdit() {
     this.completionProvider.deactivateNextEdit();
+  }
+
+  private getDesiredStatusStatus() {
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
+    const enabled = config.get<boolean>("enableTabAutocomplete") ?? true;
+    if (!enabled) {
+      return StatusBarStatus.Disabled;
+    }
+
+    const pauseOnBattery =
+      config.get<boolean>("pauseTabAutocompleteOnBattery") ?? false;
+    if (pauseOnBattery && !this.battery.isACConnected()) {
+      return StatusBarStatus.Paused;
+    }
+
+    return StatusBarStatus.Enabled;
   }
 
   private async getAutocompleteMenuState() {
