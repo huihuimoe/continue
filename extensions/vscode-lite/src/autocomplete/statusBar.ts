@@ -12,39 +12,41 @@ export enum StatusBarStatus {
   Paused,
 }
 
-let statusBarStatus: StatusBarStatus | undefined;
+const STATUS_BAR_QUICK_PICK_LABELS: Record<StatusBarStatus, string> = {
+  [StatusBarStatus.Disabled]: "$(circle-slash) Disable autocomplete",
+  [StatusBarStatus.Enabled]: "$(check) Enable autocomplete",
+  [StatusBarStatus.Paused]: "$(debug-pause) Pause autocomplete",
+};
+
+const LABEL_TO_STATUS = new Map<string, StatusBarStatus>(
+  Object.entries(STATUS_BAR_QUICK_PICK_LABELS).map(([status, label]) => [
+    label,
+    Number(status) as StatusBarStatus,
+  ]),
+);
+
+const statusBarState = {
+  status: undefined as StatusBarStatus | undefined,
+  loading: false,
+  error: false,
+};
+
 let statusBarItem: vscode.StatusBarItem | undefined;
 let statusBarFalseTimeout: NodeJS.Timeout | undefined;
-let statusBarError = false;
 
 export function quickPickStatusText(status: StatusBarStatus | undefined) {
-  switch (status) {
-    case StatusBarStatus.Disabled:
-      return "$(circle-slash) Disable autocomplete";
-    case StatusBarStatus.Enabled:
-      return "$(check) Enable autocomplete";
-    case StatusBarStatus.Paused:
-      return "$(debug-pause) Pause autocomplete";
-    default:
-      return "$(circle-slash) Disable autocomplete";
+  if (status === undefined) {
+    return STATUS_BAR_QUICK_PICK_LABELS[StatusBarStatus.Disabled];
   }
+  return STATUS_BAR_QUICK_PICK_LABELS[status];
 }
 
 export function getStatusBarStatus() {
-  return statusBarStatus;
+  return statusBarState.status;
 }
 
 export function getStatusBarStatusFromQuickPickItemLabel(label: string) {
-  switch (label) {
-    case "$(circle-slash) Disable autocomplete":
-      return StatusBarStatus.Disabled;
-    case "$(check) Enable autocomplete":
-      return StatusBarStatus.Enabled;
-    case "$(debug-pause) Pause autocomplete":
-      return StatusBarStatus.Paused;
-    default:
-      return undefined;
-  }
+  return LABEL_TO_STATUS.get(label);
 }
 
 function getMetaKeyLabel() {
@@ -80,45 +82,38 @@ export async function handleNextEditToggle(
   label: string,
   config: vscode.WorkspaceConfiguration,
 ) {
+  const isEnabling = label === USE_NEXT_EDIT_MENU_ITEM_LABEL;
   await config.update(
     "enableNextEdit",
-    label === USE_NEXT_EDIT_MENU_ITEM_LABEL,
+    isEnabling,
     vscode.ConfigurationTarget.Global,
   );
 }
 
-export function stopStatusBarLoading() {
-  statusBarFalseTimeout = setTimeout(() => {
-    setupStatusBar(StatusBarStatus.Enabled, false);
-  }, 100);
-}
-
-export function statusBarItemText(
+function computeStatusBarText(
   status: StatusBarStatus | undefined,
-  loading?: boolean,
-  error?: boolean,
+  loading: boolean,
+  error: boolean,
 ) {
   if (error) {
     return "$(alert) Continue Lite (config error)";
   }
 
-  let text: string;
+  if (loading) {
+    return "$(loading~spin) Continue Lite";
+  }
+
+  let baseText = "Continue Lite";
   switch (status) {
     case StatusBarStatus.Disabled:
-      text = "$(circle-slash) Continue Lite";
+      baseText = "$(circle-slash) Continue Lite";
       break;
     case StatusBarStatus.Enabled:
-      text = "$(check) Continue Lite";
+      baseText = "$(check) Continue Lite";
       break;
     case StatusBarStatus.Paused:
-      text = "$(debug-pause) Continue Lite";
+      baseText = "$(debug-pause) Continue Lite";
       break;
-    default:
-      if (loading) {
-        text = "$(loading~spin) Continue Lite";
-      } else {
-        text = "Continue Lite";
-      }
   }
 
   const nextEditEnabled =
@@ -126,13 +121,13 @@ export function statusBarItemText(
       .getConfiguration(EXTENSION_NAME)
       .get<boolean>("enableNextEdit") ?? false;
   if (nextEditEnabled) {
-    text += " (NE)";
+    baseText += " (NE)";
   }
 
-  return text;
+  return baseText;
 }
 
-export function statusBarItemTooltip(status: StatusBarStatus | undefined) {
+function computeStatusBarTooltip(status: StatusBarStatus | undefined) {
   switch (status) {
     case StatusBarStatus.Enabled: {
       const nextEditEnabled =
@@ -150,40 +145,55 @@ export function statusBarItemTooltip(status: StatusBarStatus | undefined) {
   }
 }
 
-export function setupStatusBar(
-  status: StatusBarStatus | undefined,
-  loading?: boolean,
-  error?: boolean,
-) {
-  if (loading !== false) {
-    clearTimeout(statusBarFalseTimeout);
-    statusBarFalseTimeout = undefined;
-  }
-
+function renderStatusBar() {
   if (!statusBarItem) {
     statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
     );
   }
 
-  if (error !== undefined) {
-    statusBarError = error;
-    if (status === undefined) {
-      status = statusBarStatus;
-    }
-    if (loading === undefined) {
-      loading = false;
-    }
-  }
-
-  statusBarItem.text = statusBarItemText(status, loading, statusBarError);
-  statusBarItem.tooltip = statusBarItemTooltip(status ?? statusBarStatus);
+  statusBarItem.text = computeStatusBarText(
+    statusBarState.status,
+    statusBarState.loading,
+    statusBarState.error,
+  );
+  statusBarItem.tooltip = computeStatusBarTooltip(statusBarState.status);
   statusBarItem.command = "continue.openTabAutocompleteConfigMenu";
   statusBarItem.show();
+}
 
+export function setupStatusBar(
+  status: StatusBarStatus | undefined,
+  loading?: boolean,
+  error?: boolean,
+) {
   if (status !== undefined) {
-    statusBarStatus = status;
+    statusBarState.status = status;
   }
+
+  if (loading !== undefined) {
+    statusBarState.loading = loading;
+  }
+
+  if (error !== undefined) {
+    statusBarState.error = error;
+  }
+
+  if (loading !== false) {
+    clearTimeout(statusBarFalseTimeout);
+    statusBarFalseTimeout = undefined;
+  }
+
+  renderStatusBar();
+}
+
+export function stopStatusBarLoading() {
+  clearTimeout(statusBarFalseTimeout);
+  statusBarFalseTimeout = setTimeout(() => {
+    statusBarState.loading = false;
+    renderStatusBar();
+    statusBarFalseTimeout = undefined;
+  }, 100);
 }
 
 export function monitorBatteryChanges(battery: {
