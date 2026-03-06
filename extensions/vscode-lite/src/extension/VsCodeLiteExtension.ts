@@ -30,6 +30,9 @@ export class VsCodeLiteExtension {
   private readonly contextProviders: LiteContextProvider[] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
+    const nextEditEnabled = config.get<boolean>("enableNextEdit") ?? true;
+
     setupStatusBar(this.getDesiredStatusStatus());
 
     this.context.subscriptions.push(
