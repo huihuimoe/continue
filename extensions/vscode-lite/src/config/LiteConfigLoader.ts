@@ -16,9 +16,7 @@ interface ContinueJsonLike {
   models?: LiteAutocompleteModel[];
 }
 
-export function getAutocompleteModelIdentity(
-  model: LiteAutocompleteModel,
-): string {
+function getAutocompleteModelIdentity(model: LiteAutocompleteModel): string {
   const provider = model.provider ?? "";
   const modelName = model.model ?? "";
   const title = model.title ?? "";
@@ -52,7 +50,6 @@ export class LiteConfigLoader {
     return {
       autocompleteModels,
       selectedAutocompleteModelTitle: this.getModelTitle(selectedModel),
-      selectedAutocompleteModelId: selectedModel?.identity,
       autocompleteModel: selectedModel,
       tabAutocompleteOptions,
       nextEditEnabled: options.settings?.enableNextEdit ?? true,
@@ -88,7 +85,7 @@ export class LiteConfigLoader {
     config: ContinueJsonLike | undefined,
   ): LiteAutocompleteModel[] {
     const models: LiteAutocompleteModel[] = [];
-    const seenIdentities = new Set<string>();
+    const identityToIndex = new Map<string, number>();
 
     const addModel = (model?: LiteAutocompleteModel) => {
       if (!model) {
@@ -96,16 +93,15 @@ export class LiteConfigLoader {
       }
 
       const identity = getAutocompleteModelIdentity(model);
-      if (seenIdentities.has(identity)) {
-        const existing = models.find((item) => item.identity === identity);
-        if (existing) {
-          Object.assign(existing, model, { identity });
-        }
+      if (identityToIndex.has(identity)) {
+        const existingIndex = identityToIndex.get(identity)!;
+        const existing = models[existingIndex];
+        models[existingIndex] = { ...existing, ...model };
         return;
       }
 
-      seenIdentities.add(identity);
-      models.push({ ...model, identity });
+      identityToIndex.set(identity, models.length);
+      models.push(model);
     };
 
     if (Array.isArray(config?.tabAutocompleteModel)) {
@@ -124,10 +120,12 @@ export class LiteConfigLoader {
   private resolveSelectedAutocompleteModel(
     config: ContinueJsonLike | undefined,
     models: LiteAutocompleteModel[],
-    overrideIdentity?: string,
+    overrideDisplayName?: string,
   ): LiteAutocompleteModel | undefined {
-    if (overrideIdentity) {
-      const overrideMatch = this.findModelByIdentity(models, overrideIdentity);
+    if (overrideDisplayName) {
+      const overrideMatch = models.find((model) =>
+        this.matchesDisplayName(model, overrideDisplayName),
+      );
       if (overrideMatch) {
         return overrideMatch;
       }
@@ -135,12 +133,11 @@ export class LiteConfigLoader {
 
     const tabModel = this.resolveTabAutocompleteModel(config);
     if (tabModel) {
-      const tabIdentity = getAutocompleteModelIdentity(tabModel);
+      const identity = getAutocompleteModelIdentity(tabModel);
       return (
-        models.find((model) => model.identity === tabIdentity) ?? {
-          ...tabModel,
-          identity: tabIdentity,
-        }
+        models.find(
+          (model) => getAutocompleteModelIdentity(model) === identity,
+        ) ?? tabModel
       );
     }
 
@@ -162,15 +159,17 @@ export class LiteConfigLoader {
     return candidate;
   }
 
-  private findModelByIdentity(
-    models: LiteAutocompleteModel[],
-    identity: string,
-  ): LiteAutocompleteModel | undefined {
-    return models.find((model) => model.identity === identity);
-  }
-
   private getModelTitle(model?: LiteAutocompleteModel): string | undefined {
     return model?.title ?? model?.name;
+  }
+
+  private matchesDisplayName(
+    model: LiteAutocompleteModel,
+    value: string,
+  ): boolean {
+    const title = model.title ?? "";
+    const name = model.name ?? "";
+    return value === title || value === name;
   }
 
   private modelHasAutocompleteRole(model: LiteAutocompleteModel): boolean {
