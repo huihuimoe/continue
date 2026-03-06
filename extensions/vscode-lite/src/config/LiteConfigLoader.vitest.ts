@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { LiteConfigLoader } from "./LiteConfigLoader";
@@ -7,8 +9,7 @@ describe("LiteConfigLoader", () => {
     const loader = new LiteConfigLoader();
 
     const config = await loader.loadConfig({
-      workspacePath: new URL("./__fixtures__/json-workspace", import.meta.url)
-        .pathname,
+      workspacePath: path.join(__dirname, "__fixtures__", "json-workspace"),
       settings: {
         enableTabAutocomplete: false,
         enableNextEdit: true,
@@ -30,8 +31,7 @@ describe("LiteConfigLoader", () => {
     const loader = new LiteConfigLoader();
 
     const config = await loader.loadConfig({
-      workspacePath: new URL("./__fixtures__/yaml-workspace", import.meta.url)
-        .pathname,
+      workspacePath: path.join(__dirname, "__fixtures__", "yaml-workspace"),
       settings: {
         enableTabAutocomplete: true,
         enableNextEdit: false,
