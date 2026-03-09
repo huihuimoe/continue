@@ -8,7 +8,7 @@ export const MODEL_WINDOW_SIZES: Record<
   NEXT_EDIT_MODELS,
   { topMargin: number; bottomMargin: number }
 > = {
-  "mercury-coder": {
+  "mercury-edit": {
     topMargin: 0,
     bottomMargin: 5,
   }, // mercury coder uses full file diff, so this should be unnecessary

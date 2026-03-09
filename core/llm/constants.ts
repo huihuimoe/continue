@@ -21,7 +21,7 @@ export enum LLMConfigurationStatuses {
 }
 
 export enum NEXT_EDIT_MODELS {
-  MERCURY_CODER = "mercury-coder",
+  MERCURY_CODER = "mercury-edit",
   INSTINCT = "instinct",
   SWEEP_NEXT_EDIT = "sweep-next-edit",
 }
@@ -34,5 +34,6 @@ export {
   DEFAULT_MAX_TOKENS,
   DEFAULT_PRUNING_LENGTH,
   DEFAULT_REASONING_TOKENS,
-  PROXY_URL,
+  PROXY_URL
 };
+

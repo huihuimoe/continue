@@ -16,7 +16,7 @@ export const NEXT_EDIT_MODEL_TEMPLATES: Record<
   NEXT_EDIT_MODELS,
   NextEditTemplate
 > = {
-  "mercury-coder": {
+  "mercury-edit": {
     template: `${MERCURY_RECENTLY_VIEWED_CODE_SNIPPETS_OPEN}\n{{{recentlyViewedCodeSnippets}}}\n${MERCURY_RECENTLY_VIEWED_CODE_SNIPPETS_CLOSE}\n\n${MERCURY_CURRENT_FILE_CONTENT_OPEN}\ncurrent_file_path: {{{currentFilePath}}}\n{{{currentFileContent}}}\n${MERCURY_CURRENT_FILE_CONTENT_CLOSE}\n\n${MERCURY_EDIT_DIFF_HISTORY_OPEN}\n{{{editDiffHistory}}}\n${MERCURY_EDIT_DIFF_HISTORY_CLOSE}\n`,
   },
   instinct: {
