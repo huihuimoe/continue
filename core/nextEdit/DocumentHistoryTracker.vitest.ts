@@ -1,24 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import Parser from "web-tree-sitter";
+import { Tree } from "web-tree-sitter";
 import { DocumentHistoryTracker } from "./DocumentHistoryTracker";
 
-// Mock the Parser.Tree class
 vi.mock("web-tree-sitter", () => {
   return {
-    default: {
-      Tree: class MockTree {
-        constructor() {
-          // Mock implementation
-        }
-      },
-    },
+    Tree: class MockTree {},
   };
 });
 
 describe("DocumentHistoryTracker", () => {
   let tracker: DocumentHistoryTracker;
-  let mockAst1: Parser.Tree;
-  let mockAst2: Parser.Tree;
+  let mockAst1: Tree;
+  let mockAst2: Tree;
   const testDocPath = "/test/document.ts";
   const testContent1 = "const x = 1;";
   const testContent2 = "const x = 2;";
@@ -30,10 +23,8 @@ describe("DocumentHistoryTracker", () => {
     tracker = DocumentHistoryTracker.getInstance();
 
     // Create mock ASTs
-    //@ts-ignore
-    mockAst1 = new Parser.Tree() as Parser.Tree;
-    //@ts-ignore
-    mockAst2 = new Parser.Tree() as Parser.Tree;
+    mockAst1 = new Tree();
+    mockAst2 = new Tree();
   });
 
   afterEach(() => {

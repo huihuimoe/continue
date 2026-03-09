@@ -1,6 +1,6 @@
 const Types = `
 declare global {
-  import Parser from "web-tree-sitter";
+  import type { Node as SyntaxNode } from "web-tree-sitter";
   import { GetGhTokenArgs } from "./protocol/ide";
   declare global {
     interface Window {
@@ -311,7 +311,7 @@ declare global {
   
   export interface SymbolWithRange extends RangeInFile {
     name: string;
-    type: Parser.SyntaxNode["type"];
+    type: SyntaxNode["type"];
     content: string;
   }
   

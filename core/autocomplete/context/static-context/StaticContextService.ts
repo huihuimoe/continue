@@ -1,6 +1,6 @@
 import path from "path";
 import { pathToFileURL } from "url";
-import Parser from "web-tree-sitter";
+import type { Node as SyntaxNode } from "web-tree-sitter";
 import { FileType, IDE, Position } from "../../../";
 import { localPathOrUriToPath } from "../../../util/pathToUri";
 import { getFullLanguageName, getQueryForFile } from "../../../util/treeSitter";
@@ -420,11 +420,11 @@ export class StaticContextService {
         // pattern 0 is let/const, 1 is var, 2 is fun
         // if (!seenDecls.has(JSON.stringify()) {
         const originalDeclText =
-          tld.pattern === 2
+          tld.patternIndex === 2
             ? tld.captures.find((d) => d.name === "top.fn.decl")!.node.text
             : tld.captures.find((d) => d.name === "top.var.decl")!.node.text;
 
-        if (tld.pattern === 2) {
+        if (tld.patternIndex === 2) {
           // build a type span
           // TODO: this fails sometimes with Cannot read properties of undefined (reading 'text')
           // most likely due to my scm query and how I'm not attaching param name along with param type
@@ -523,8 +523,8 @@ export class StaticContextService {
 
   private async extractRelevantHeadersHelper(
     originalDeclText: string,
-    node: Parser.SyntaxNode,
-    targetTypes: Set<Parser.SyntaxNode>,
+    node: SyntaxNode,
+    targetTypes: Set<SyntaxNode>,
     relevantTypes: Map<string, TypeSpanAndSourceFileAndAst>,
     relevantContext: Set<TypeSpanAndSourceFile>,
     relevantContextMap: Map<string, TypeSpanAndSourceFile>,
@@ -576,7 +576,7 @@ export class StaticContextService {
     relevantTypes: Map<string, TypeSpanAndSourceFileAndAst>,
     holeType: string,
   ) {
-    const targetTypes = new Set<Parser.SyntaxNode>();
+    const targetTypes = new Set<SyntaxNode>();
     // const ast = relevantTypes.get(holeIdentifier)!.ast;
     const ast = await getAst("file.ts", `type T = ${holeType};`);
     if (!ast) {
@@ -606,8 +606,8 @@ export class StaticContextService {
   private async generateTargetTypesHelper(
     relevantTypes: Map<string, TypeSpanAndSourceFileAndAst>,
     currType: string,
-    targetTypes: Set<Parser.SyntaxNode>,
-    node: Parser.SyntaxNode | null,
+    targetTypes: Set<SyntaxNode>,
+    node: SyntaxNode | null,
   ): Promise<void> {
     if (!node) return;
 
@@ -677,8 +677,8 @@ export class StaticContextService {
   }
 
   private async isTypeEquivalent(
-    node: Parser.SyntaxNode,
-    typ: Parser.SyntaxNode,
+    node: SyntaxNode,
+    typ: SyntaxNode,
     relevantTypes: Map<string, TypeSpanAndSourceFileAndAst>,
     foundNormalForms: Map<string, string>,
   ): Promise<boolean> {
@@ -710,7 +710,7 @@ export class StaticContextService {
   }
 
   private async normalize(
-    node: Parser.SyntaxNode,
+    node: SyntaxNode,
     relevantTypes: Map<string, TypeSpanAndSourceFileAndAst>,
   ): Promise<string> {
     if (!node) return "";

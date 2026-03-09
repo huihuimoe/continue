@@ -3,7 +3,7 @@ import {
   ModelRole,
   PromptTemplates,
 } from "@continuedev/config-yaml";
-import Parser from "web-tree-sitter";
+import type { Node as SyntaxNode } from "web-tree-sitter";
 import type {
   AssistantChatMessage,
   ChatMessage,
@@ -348,7 +348,7 @@ export interface InputModifiers {
 
 export interface SymbolWithRange extends RangeInFile {
   name: string;
-  type: Parser.SyntaxNode["type"];
+  type: SyntaxNode["type"];
   content: string;
 }
 

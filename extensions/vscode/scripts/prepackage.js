@@ -16,31 +16,31 @@ const coreRoot = path.join(__dirname, "..", "..", "..", "core");
 const extensionNodeModules = path.join(extensionRoot, "node_modules");
 const coreNodeModules = path.join(coreRoot, "node_modules");
 const REQUIRED_TREE_SITTER_WASMS = [
-  "tree-sitter-bash.wasm",
+  // "tree-sitter-bash.wasm",
   "tree-sitter-c.wasm",
   "tree-sitter-c_sharp.wasm",
   "tree-sitter-cpp.wasm",
   "tree-sitter-css.wasm",
-  "tree-sitter-elisp.wasm",
-  "tree-sitter-elixir.wasm",
-  "tree-sitter-elm.wasm",
-  "tree-sitter-embedded_template.wasm",
+  // "tree-sitter-elisp.wasm",
+  // "tree-sitter-elixir.wasm",
+  // "tree-sitter-elm.wasm",
+  // "tree-sitter-embedded_template.wasm",
   "tree-sitter-go.wasm",
-  "tree-sitter-html.wasm",
+  // "tree-sitter-html.wasm",
   "tree-sitter-java.wasm",
   "tree-sitter-javascript.wasm",
-  "tree-sitter-json.wasm",
-  "tree-sitter-lua.wasm",
-  "tree-sitter-ocaml.wasm",
+  // "tree-sitter-json.wasm",
+  // "tree-sitter-lua.wasm",
+  // "tree-sitter-ocaml.wasm",
   "tree-sitter-php.wasm",
   "tree-sitter-python.wasm",
-  "tree-sitter-ql.wasm",
-  "tree-sitter-rescript.wasm",
+  // "tree-sitter-ql.wasm",
+  // "tree-sitter-rescript.wasm",
   "tree-sitter-ruby.wasm",
   "tree-sitter-rust.wasm",
   "tree-sitter-solidity.wasm",
-  "tree-sitter-systemrdl.wasm",
-  "tree-sitter-toml.wasm",
+  // "tree-sitter-systemrdl.wasm",
+  // "tree-sitter-toml.wasm",
   "tree-sitter-tsx.wasm",
   "tree-sitter-typescript.wasm",
 ];
@@ -164,8 +164,8 @@ void (async () => {
 
   await copyMinimalPackage(
     resolveExistingPath([
-      path.join(coreNodeModules, "tree-sitter-wasms", "out"),
-      path.join(extensionNodeModules, "tree-sitter-wasms", "out"),
+      path.join(coreNodeModules, "@repomix", "tree-sitter-wasms", "out"),
+      path.join(extensionNodeModules, "@repomix", "tree-sitter-wasms", "out"),
     ]),
     path.join(extensionRoot, "out", "tree-sitter-wasms"),
     REQUIRED_TREE_SITTER_WASMS,
@@ -174,17 +174,23 @@ void (async () => {
 
   copyFile(
     resolveExistingPath([
+      path.join(coreNodeModules, "web-tree-sitter", "web-tree-sitter.wasm"),
+      path.join(
+        extensionNodeModules,
+        "web-tree-sitter",
+        "web-tree-sitter.wasm",
+      ),
       path.join(coreNodeModules, "web-tree-sitter", "tree-sitter.wasm"),
       path.join(extensionNodeModules, "web-tree-sitter", "tree-sitter.wasm"),
     ]),
-    path.join(extensionRoot, "out", "tree-sitter.wasm"),
+    path.join(extensionRoot, "out", "web-tree-sitter.wasm"),
     "tree-sitter runtime WASM",
   );
 
   validateFilesPresent([
     "tree-sitter/code-snippet-queries/c_sharp.scm",
     "tag-qry/tree-sitter-c_sharp-tags.scm",
-    "out/tree-sitter.wasm",
+    "out/web-tree-sitter.wasm",
     "out/tree-sitter-wasms/tree-sitter-typescript.wasm",
   ]);
 

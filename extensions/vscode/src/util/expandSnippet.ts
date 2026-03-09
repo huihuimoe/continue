@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 
 import { getDefinitionsForNode } from "../autocomplete/lsp";
 
-import type { SyntaxNode } from "web-tree-sitter";
+import type { Node as SyntaxNode } from "web-tree-sitter";
 
 export async function expandSnippet(
   fileUri: string,
@@ -21,7 +21,11 @@ export async function expandSnippet(
   }
 
   const fullFileContents = await ide.readFile(fileUri);
-  const root: SyntaxNode = parser.parse(fullFileContents).rootNode;
+  const tree = parser.parse(fullFileContents);
+  if (!tree) {
+    return [];
+  }
+  const root: SyntaxNode = tree.rootNode;
 
   // Find all nodes contained in the range
   const containedInRange: SyntaxNode[] = [];

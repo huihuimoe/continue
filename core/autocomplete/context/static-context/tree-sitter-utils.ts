@@ -1,5 +1,10 @@
 import * as fs from "fs/promises";
-import Parser from "web-tree-sitter";
+import type {
+  Node as SyntaxNode,
+  Parser,
+  QueryMatch,
+  Tree,
+} from "web-tree-sitter";
 import { getFullLanguageName, getQueryForFile } from "../../../util/treeSitter";
 import { getAst } from "../../util/ast";
 
@@ -17,7 +22,7 @@ export function findEnclosingTypeDeclaration(
   sourceCode: string,
   cursorLine: number,
   cursorColumn: number,
-  ast: Parser.Tree,
+  ast: Tree,
 ): TypeDeclarationResult | null {
   const point = { row: cursorLine, column: cursorColumn };
   let node = ast.rootNode.descendantForPosition(point);
@@ -61,7 +66,7 @@ export async function extractTopLevelDecls(
   }
   let language;
   if (givenParser) {
-    language = givenParser.getLanguage();
+    language = givenParser.language?.name;
   } else {
     language = getFullLanguageName(currentFile);
   }
@@ -88,7 +93,7 @@ export async function extractTopLevelDeclsWithFormatting(
   }
   let language;
   if (givenParser) {
-    language = givenParser.getLanguage();
+    language = givenParser.language?.name;
   } else {
     language = getFullLanguageName(currentFile);
   }
@@ -158,9 +163,9 @@ export async function extractTopLevelDeclsWithFormatting(
   return results;
 }
 
-export function extractFunctionTypeFromDecl(match: Parser.QueryMatch): string {
-  let paramsNode: Parser.SyntaxNode | undefined = undefined;
-  let returnNode: Parser.SyntaxNode | undefined = undefined;
+export function extractFunctionTypeFromDecl(match: QueryMatch): string {
+  let paramsNode: SyntaxNode | undefined = undefined;
+  let returnNode: SyntaxNode | undefined = undefined;
 
   for (const capture of match.captures) {
     if (capture.name === "top.fn.param.type") {
@@ -191,7 +196,7 @@ export function extractFunctionTypeFromDecl(match: Parser.QueryMatch): string {
   return `(${paramsNode!.text}) => ${returnNode!.text}`;
 }
 
-export function unwrapToBaseType(node: Parser.SyntaxNode): Parser.SyntaxNode {
+export function unwrapToBaseType(node: SyntaxNode): SyntaxNode {
   if (
     [
       "function_type",

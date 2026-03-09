@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 import { expect, vi } from "vitest";
 
-import Parser from "web-tree-sitter";
+import type { Point } from "web-tree-sitter";
 import { Position } from "../../../..";
 import { testIde } from "../../../../test/fixtures";
 import { localPathOrUriToPath } from "../../../../util/pathToUri";
@@ -33,7 +33,7 @@ export async function testRootPathContext(
   folderName: string,
   relativeFilepath: string,
   position: Position,
-  expectedDefinitionPositions: Parser.Point[],
+  expectedDefinitionPositions: Point[],
 ) {
   // Create a mocked instance of RootPathContextService
   const ide = testIde;

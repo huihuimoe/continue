@@ -1,7 +1,13 @@
 import fs from "node:fs";
 import path from "path";
 
-import Parser from "web-tree-sitter";
+import {
+  Language,
+  Parser,
+  Query,
+  type Node as SyntaxNode,
+  type Tree,
+} from "web-tree-sitter";
 import { FileSymbolMap, IDE, SymbolWithRange } from "..";
 import { getUriFileExtension } from "./uri";
 
@@ -11,27 +17,27 @@ export enum LanguageName {
   C = "c",
   CSS = "css",
   PHP = "php",
-  BASH = "bash",
-  JSON = "json",
+  // BASH = "bash",
+  // JSON = "json",
   TYPESCRIPT = "typescript",
   TSX = "tsx",
-  ELM = "elm",
+  // ELM = "elm",
   JAVASCRIPT = "javascript",
   PYTHON = "python",
-  ELISP = "elisp",
-  ELIXIR = "elixir",
+  // ELISP = "elisp",
+  // ELIXIR = "elixir",
   GO = "go",
-  EMBEDDED_TEMPLATE = "embedded_template",
-  HTML = "html",
+  // EMBEDDED_TEMPLATE = "embedded_template",
+  // HTML = "html",
   JAVA = "java",
-  LUA = "lua",
-  OCAML = "ocaml",
-  QL = "ql",
-  RESCRIPT = "rescript",
+  // LUA = "lua",
+  // OCAML = "ocaml",
+  // QL = "ql",
+  // RESCRIPT = "rescript",
   RUBY = "ruby",
   RUST = "rust",
-  SYSTEMRDL = "systemrdl",
-  TOML = "toml",
+  // SYSTEMRDL = "systemrdl",
+  // TOML = "toml",
   SOLIDITY = "solidity",
 }
 
@@ -61,9 +67,9 @@ export const supportedLanguages: { [key: string]: LanguageName } = {
   php7: LanguageName.PHP,
   phps: LanguageName.PHP,
   "php-s": LanguageName.PHP,
-  bash: LanguageName.BASH,
-  sh: LanguageName.BASH,
-  json: LanguageName.JSON,
+  // bash: LanguageName.BASH,
+  // sh: LanguageName.BASH,
+  // json: LanguageName.JSON,
   ts: LanguageName.TYPESCRIPT,
   mts: LanguageName.TYPESCRIPT,
   cts: LanguageName.TYPESCRIPT,
@@ -72,7 +78,6 @@ export const supportedLanguages: { [key: string]: LanguageName } = {
   // The .wasm file being used is faulty, and yaml is split line-by-line anyway for the most part
   // yaml: LanguageName.YAML,
   // yml: LanguageName.YAML,
-  elm: LanguageName.ELM,
   js: LanguageName.JAVASCRIPT,
   jsx: LanguageName.JAVASCRIPT,
   mjs: LanguageName.JAVASCRIPT,
@@ -81,30 +86,30 @@ export const supportedLanguages: { [key: string]: LanguageName } = {
   // ipynb: LanguageName.PYTHON, // It contains Python, but the file format is a ton of JSON.
   pyw: LanguageName.PYTHON,
   pyi: LanguageName.PYTHON,
-  el: LanguageName.ELISP,
-  emacs: LanguageName.ELISP,
-  ex: LanguageName.ELIXIR,
-  exs: LanguageName.ELIXIR,
+  // el: LanguageName.ELISP,
+  // emacs: LanguageName.ELISP,
+  // ex: LanguageName.ELIXIR,
+  // exs: LanguageName.ELIXIR,
   go: LanguageName.GO,
-  eex: LanguageName.EMBEDDED_TEMPLATE,
-  heex: LanguageName.EMBEDDED_TEMPLATE,
-  leex: LanguageName.EMBEDDED_TEMPLATE,
-  html: LanguageName.HTML,
-  htm: LanguageName.HTML,
+  // eex: LanguageName.EMBEDDED_TEMPLATE,
+  // heex: LanguageName.EMBEDDED_TEMPLATE,
+  // leex: LanguageName.EMBEDDED_TEMPLATE,
+  // html: LanguageName.HTML,
+  // htm: LanguageName.HTML,
   java: LanguageName.JAVA,
-  lua: LanguageName.LUA,
-  luau: LanguageName.LUA,
-  ocaml: LanguageName.OCAML,
-  ml: LanguageName.OCAML,
-  mli: LanguageName.OCAML,
-  ql: LanguageName.QL,
-  res: LanguageName.RESCRIPT,
-  resi: LanguageName.RESCRIPT,
+  // lua: LanguageName.LUA,
+  // luau: LanguageName.LUA,
+  // ocaml: LanguageName.OCAML,
+  // ml: LanguageName.OCAML,
+  // mli: LanguageName.OCAML,
+  // ql: LanguageName.QL,
+  // res: LanguageName.RESCRIPT,
+  // resi: LanguageName.RESCRIPT,
   rb: LanguageName.RUBY,
   erb: LanguageName.RUBY,
   rs: LanguageName.RUST,
-  rdl: LanguageName.SYSTEMRDL,
-  toml: LanguageName.TOML,
+  // rdl: LanguageName.SYSTEMRDL,
+  // toml: LanguageName.TOML,
   sol: LanguageName.SOLIDITY,
 
   // jl: LanguageName.JULIA,
@@ -140,11 +145,11 @@ export async function getParserForFile(filepath: string) {
 // Loading the wasm files to create a Language object is an expensive operation and with
 // sufficient number of files can result in errors, instead keep a map of language name
 // to Language object
-const nameToLanguage = new Map<string, Parser.Language>();
+const nameToLanguage = new Map<string, Language>();
 
 export async function getLanguageForFile(
   filepath: string,
-): Promise<Parser.Language | undefined> {
+): Promise<Language | undefined> {
   try {
     await Parser.init();
     const extension = getUriFileExtension(filepath);
@@ -174,7 +179,7 @@ export const getFullLanguageName = (filepath: string) => {
 export async function getQueryForFile(
   filepath: string,
   queryPath: string,
-): Promise<Parser.Query | undefined> {
+): Promise<Query | undefined> {
   const language = await getLanguageForFile(filepath);
   if (!language) {
     return undefined;
@@ -193,25 +198,25 @@ export async function getQueryForFile(
   }
   const querySource = fs.readFileSync(sourcePath).toString();
 
-  const query = language.query(querySource);
+  const query = new Query(language, querySource);
   return query;
 }
 
 async function loadLanguageForFileExt(
   fileExtension: string,
-): Promise<Parser.Language> {
+): Promise<Language> {
   const wasmPath = path.join(
     process.env.NODE_ENV === "test" ? process.cwd() : __dirname,
     ...(process.env.NODE_ENV === "test"
-      ? ["node_modules", "tree-sitter-wasms", "out"]
+      ? ["node_modules", "@repomix", "tree-sitter-wasms", "out"]
       : ["tree-sitter-wasms"]),
     `tree-sitter-${supportedLanguages[fileExtension]}.wasm`,
   );
-  return await Parser.Language.load(wasmPath);
+  return await Language.load(wasmPath);
 }
 
 // See https://tree-sitter.github.io/tree-sitter/using-parsers
-const GET_SYMBOLS_FOR_NODE_TYPES: Parser.SyntaxNode["type"][] = [
+const GET_SYMBOLS_FOR_NODE_TYPES: SyntaxNode["type"][] = [
   "class_declaration",
   "class_definition",
   "function_item", // function name = first "identifier" child
@@ -233,9 +238,13 @@ export async function getSymbolsForFile(
     return;
   }
 
-  let tree: Parser.Tree;
+  let tree: Tree;
   try {
-    tree = parser.parse(contents);
+    const parsedTree = parser.parse(contents);
+    if (!parsedTree) {
+      return;
+    }
+    tree = parsedTree;
   } catch (e) {
     console.log(`Error parsing file: ${filepath}`);
     return;
@@ -244,7 +253,7 @@ export async function getSymbolsForFile(
 
   // Function to recursively find all named nodes (classes and functions)
   const symbols: SymbolWithRange[] = [];
-  function findNamedNodesRecursive(node: Parser.SyntaxNode) {
+  function findNamedNodesRecursive(node: SyntaxNode) {
     // console.log(`node: ${node.type}, ${node.text}`);
     if (GET_SYMBOLS_FOR_NODE_TYPES.includes(node.type)) {
       // console.log(`parent: ${node.type}, ${node.text.substring(0, 200)}`);
@@ -255,7 +264,7 @@ export async function getSymbolsForFile(
       // Empirically, the actual name is the last identifier in the node
       // Especially with languages where return type is declared before the name
       // TODO use findLast in newer version of node target
-      let identifier: Parser.SyntaxNode | undefined = undefined;
+      let identifier: SyntaxNode | undefined = undefined;
       for (let i = node.children.length - 1; i >= 0; i--) {
         if (
           node.children[i].type === "identifier" ||

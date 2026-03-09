@@ -1,7 +1,7 @@
 import path from "path";
 
 import { distance } from "fastest-levenshtein";
-import Parser from "web-tree-sitter";
+import type { Node as SyntaxNode, Tree } from "web-tree-sitter";
 
 import { DiffLine } from "../..";
 import { LANGUAGES } from "../../autocomplete/constants/AutocompleteLanguageInfo";
@@ -11,8 +11,8 @@ import { getParserForFile } from "../../util/treeSitter";
 import { findInAst } from "./findInAst";
 
 type AstReplacements = Array<{
-  nodeToReplace: Parser.SyntaxNode;
-  replacementNodes: Parser.SyntaxNode[];
+  nodeToReplace: SyntaxNode;
+  replacementNodes: SyntaxNode[];
 }>;
 
 const LAZY_COMMENT_REGEX = /\.{3}\s*(.+?)\s*\.{3}/;
@@ -108,16 +108,19 @@ function shouldRejectDiff(diff: DiffLine[]): boolean {
 }
 
 function nodeSurroundedInLazyBlocks(
-  parser: Parser,
+  parser: NonNullable<Awaited<ReturnType<typeof getParserForFile>>>,
 
   file: string,
   filename: string,
-): { newTree: Parser.Tree; newFile: string } | undefined {
+): { newTree: Tree; newFile: string } | undefined {
   const ext = path.extname(filename).slice(1);
   const language = LANGUAGES[ext];
   if (language) {
     const newFile = `${language.singleLineComment} ... existing code ...\n\n${file}\n\n${language.singleLineComment} ... existing code...`;
     const newTree = parser.parse(newFile);
+    if (!newTree) {
+      return undefined;
+    }
 
     return { newTree, newFile };
   }
@@ -148,8 +151,13 @@ export async function deterministicApplyLazyEdit({
     return undefined;
   }
 
-  const oldTree = parser.parse(oldFile);
-  let newTree = parser.parse(newLazyFile);
+  const parsedOldTree = parser.parse(oldFile);
+  const parsedNewTree = parser.parse(newLazyFile);
+  if (!parsedOldTree || !parsedNewTree) {
+    return undefined;
+  }
+  const oldTree: Tree = parsedOldTree;
+  let newTree: Tree = parsedNewTree;
   let reconstructedNewFile: string | undefined = undefined;
 
   if (onlyFullFileRewrite) {
@@ -229,7 +237,7 @@ export async function deterministicApplyLazyEdit({
   return diff;
 }
 
-function isLazyBlock(node: Parser.SyntaxNode): boolean {
+function isLazyBlock(node: SyntaxNode): boolean {
   // Special case for "{/* ... existing code ... */}"
   if (
     node.type === "jsx_expression" &&
@@ -252,8 +260,8 @@ function stringsWithinLevDistThreshold(
 }
 
 function programNodeIsSimilar(
-  programNode: Parser.SyntaxNode,
-  otherNode: Parser.SyntaxNode,
+  programNode: SyntaxNode,
+  otherNode: SyntaxNode,
 ): boolean {
   // Check purely based on whether they are similar strings
   const newLines = programNode.text.split("\n");
@@ -301,7 +309,7 @@ function programNodeIsSimilar(
  * @param b
  * @returns
  */
-function nodesAreSimilar(a: Parser.SyntaxNode, b: Parser.SyntaxNode): boolean {
+function nodesAreSimilar(a: SyntaxNode, b: SyntaxNode): boolean {
   if (a.type !== b.type) {
     return false;
   }
@@ -340,7 +348,7 @@ function nodesAreSimilar(a: Parser.SyntaxNode, b: Parser.SyntaxNode): boolean {
   return stringsWithinLevDistThreshold(lineOneA, lineOneB, 0.2);
 }
 
-function nodesAreExact(a: Parser.SyntaxNode, b: Parser.SyntaxNode): boolean {
+function nodesAreExact(a: SyntaxNode, b: SyntaxNode): boolean {
   return a.text === b.text;
 }
 
@@ -351,8 +359,8 @@ function nodesAreExact(a: Parser.SyntaxNode, b: Parser.SyntaxNode): boolean {
  * @returns
  */
 function findLazyBlockReplacements(
-  oldNode: Parser.SyntaxNode,
-  newNode: Parser.SyntaxNode,
+  oldNode: SyntaxNode,
+  newNode: SyntaxNode,
   replacements: AstReplacements,
 ): void {
   // Base case
@@ -368,7 +376,7 @@ function findLazyBlockReplacements(
   const leftChildren = oldNode.namedChildren;
   const rightChildren = newNode.namedChildren;
   let isLazy = false;
-  let currentLazyBlockNode: Parser.SyntaxNode | undefined = undefined;
+  let currentLazyBlockNode: SyntaxNode | undefined = undefined;
   const currentLazyBlockReplacementNodes = [];
 
   while (leftChildren.length > 0 && rightChildren.length > 0) {

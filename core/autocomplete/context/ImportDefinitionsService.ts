@@ -75,6 +75,9 @@ export class ImportDefinitionsService {
         },
       ],
     });
+    if (!ast) {
+      return null;
+    }
     const language = getFullLanguageName(filepath);
     const query = await getQueryForFile(
       filepath,
@@ -86,7 +89,7 @@ export class ImportDefinitionsService {
       };
     }
 
-    const matches = query?.matches(ast.rootNode);
+    const matches = query.matches(ast.rootNode);
 
     const fileInfo: FileInfo = {
       imports: {},

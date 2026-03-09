@@ -1,4 +1,4 @@
-import Parser from "web-tree-sitter";
+import type { Node as SyntaxNode } from "web-tree-sitter";
 import { IDE, RangeInFile } from "..";
 import { DocumentHistoryTracker } from "./DocumentHistoryTracker";
 
@@ -69,9 +69,7 @@ async function staticJump(ctx: {
   }
 }
 
-function findClosestIdentifierNode(
-  node: Parser.SyntaxNode | null,
-): Parser.SyntaxNode | null {
+function findClosestIdentifierNode(node: SyntaxNode | null): SyntaxNode | null {
   if (!node) return null;
 
   if (isIdentifierNode(node)) return node;
@@ -96,9 +94,7 @@ function findClosestIdentifierNode(
   return findClosestIdentifierNode(parent);
 }
 
-function findLeftmostIdentifier(
-  node: Parser.SyntaxNode,
-): Parser.SyntaxNode | null {
+function findLeftmostIdentifier(node: SyntaxNode): SyntaxNode | null {
   if (isIdentifierNode(node)) return node;
 
   for (let i = 0; i < node.childCount; ++i) {
@@ -112,7 +108,7 @@ function findLeftmostIdentifier(
   return null;
 }
 
-function isIdentifierNode(node: Parser.SyntaxNode) {
+function isIdentifierNode(node: SyntaxNode) {
   const nodeType = node.type;
 
   if (nodeType === "identifier") return true;
@@ -122,7 +118,7 @@ function isIdentifierNode(node: Parser.SyntaxNode) {
   return specialIdentifiers.includes(nodeType);
 }
 
-function isDeclarationNode(node: Parser.SyntaxNode) {
+function isDeclarationNode(node: SyntaxNode) {
   const nodeType = node.type;
 
   if (nodeType.endsWith("_declaration")) return true;
