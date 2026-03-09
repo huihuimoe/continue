@@ -173,7 +173,10 @@ void (async () => {
   );
 
   copyFile(
-    path.join(coreRoot, "vendor", "tree-sitter.wasm"),
+    resolveExistingPath([
+      path.join(coreNodeModules, "web-tree-sitter", "tree-sitter.wasm"),
+      path.join(extensionNodeModules, "web-tree-sitter", "tree-sitter.wasm"),
+    ]),
     path.join(extensionRoot, "out", "tree-sitter.wasm"),
     "tree-sitter runtime WASM",
   );
