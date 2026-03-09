@@ -1,12 +1,9 @@
-import { Tiktoken, encodingForModel as _encodingForModel } from "js-tiktoken";
-
 import {
   ChatMessage,
   CompiledMessagesResult,
   MessageContent,
   MessagePart,
 } from "../index.js";
-import { autodetectTemplateType } from "./autodetect.js";
 import {
   addSpaceToAnyEmptyMessages,
   chatMessageIsEmpty,
@@ -15,72 +12,19 @@ import {
 } from "./messages.js";
 
 import { renderChatMessage } from "../util/messageContent.js";
-import { AsyncEncoder, LlamaAsyncEncoder } from "./asyncEncoder.js";
 import { DEFAULT_PRUNING_LENGTH } from "./constants.js";
-import { getAdjustedTokenCountFromModel } from "./getAdjustedTokenCount.js";
-import llamaTokenizer from "./llamaTokenizer.js";
-interface Encoding {
-  encode: Tiktoken["encode"];
-  decode: Tiktoken["decode"];
+const APPROX_CHARS_PER_TOKEN = 3;
+
+function estimateTextTokens(text: string): number {
+  if (!text.length) {
+    return 0;
+  }
+
+  return Math.ceil(text.length / APPROX_CHARS_PER_TOKEN);
 }
 
-class LlamaEncoding implements Encoding {
-  encode(text: string): number[] {
-    return llamaTokenizer.encode(text);
-  }
-
-  decode(tokens: number[]): string {
-    return llamaTokenizer.decode(tokens);
-  }
-}
-
-class NonWorkerAsyncEncoder implements AsyncEncoder {
-  constructor(private readonly encoding: Encoding) {}
-
-  async close(): Promise<void> {}
-
-  async encode(text: string): Promise<number[]> {
-    return this.encoding.encode(text);
-  }
-
-  async decode(tokens: number[]): Promise<string> {
-    return this.encoding.decode(tokens);
-  }
-}
-
-let gptEncoding: Encoding | null = null;
-const llamaEncoding = new LlamaEncoding();
-const llamaAsyncEncoder = new LlamaAsyncEncoder();
-
-function asyncEncoderForModel(modelName: string): AsyncEncoder {
-  // Temporary due to issues packaging the worker files
-  if (process.env.IS_BINARY) {
-    const encoding = encodingForModel(modelName);
-    return new NonWorkerAsyncEncoder(encoding);
-  }
-
-  const modelType = autodetectTemplateType(modelName);
-  if (!modelType || modelType === "none") {
-    // Right now there is a problem packaging js-tiktoken in workers. Until then falling back
-    // Cannot find package 'js-tiktoken' imported from /Users/nate/gh/continuedev/continue/extensions/vscode/out/tiktokenWorkerPool.mjs
-    // return gptAsyncEncoder;
-    return llamaAsyncEncoder;
-  }
-  return llamaAsyncEncoder;
-}
-
-function encodingForModel(modelName: string): Encoding {
-  const modelType = autodetectTemplateType(modelName);
-
-  if (!modelType || modelType === "none") {
-    if (!gptEncoding) {
-      gptEncoding = _encodingForModel("gpt-4");
-    }
-
-    return gptEncoding;
-  }
-
-  return llamaEncoding;
+function approximateCharacterBudget(maxTokens: number): number {
+  return Math.max(0, maxTokens) * APPROX_CHARS_PER_TOKEN;
 }
 
 function countImageTokens(content: MessagePart): number {
@@ -92,42 +36,26 @@ function countImageTokens(content: MessagePart): number {
 
 async function countTokensAsync(
   content: MessageContent,
-  // defaults to llama2 because the tokenizer tends to produce more tokens
   modelName = "llama2",
 ): Promise<number> {
-  const encoding = asyncEncoderForModel(modelName);
-  if (Array.isArray(content)) {
-    const promises = content.map(async (part) => {
-      if (part.type === "imageUrl") {
-        return countImageTokens(part);
-      }
-      return (await encoding.encode(part.text ?? "")).length;
-    });
-    return (await Promise.all(promises)).reduce((sum, val) => sum + val, 0);
-  }
-  return (await encoding.encode(content ?? "")).length;
+  return Promise.resolve(countTokens(content, modelName));
 }
 
-function countTokens(
-  content: MessageContent,
-  // defaults to llama2 because the tokenizer tends to produce more tokens
-  modelName = "llama2",
-): number {
-  const encoding = encodingForModel(modelName);
+function countTokens(content: MessageContent, _modelName = "llama2"): number {
   let baseTokens = 0;
   if (Array.isArray(content)) {
     baseTokens = content.reduce((acc, part) => {
       return (
         acc +
         (part.type === "text"
-          ? encoding.encode(part.text ?? "", "all", []).length
+          ? estimateTextTokens(part.text ?? "")
           : countImageTokens(part))
       );
     }, 0);
   } else {
-    baseTokens = encoding.encode(content ?? "", "all", []).length;
+    baseTokens = estimateTextTokens(content ?? "");
   }
-  return getAdjustedTokenCountFromModel(baseTokens, modelName);
+  return baseTokens;
 }
 
 function countChatMessageTokens(
@@ -281,37 +209,33 @@ function pruneLinesFromBottom(
 }
 
 function pruneStringFromBottom(
-  modelName: string,
+  _modelName: string,
   maxTokens: number,
   prompt: string,
 ): string {
-  const encoding = encodingForModel(modelName);
-
-  const tokens = encoding.encode(prompt, "all", []);
-  if (tokens.length <= maxTokens) {
+  const charBudget = approximateCharacterBudget(maxTokens);
+  if (prompt.length <= charBudget) {
     return prompt;
   }
 
-  return encoding.decode(tokens.slice(0, maxTokens));
+  return prompt.slice(0, charBudget);
 }
 
 function pruneStringFromTop(
-  modelName: string,
+  _modelName: string,
   maxTokens: number,
   prompt: string,
 ): string {
-  const encoding = encodingForModel(modelName);
-
-  const tokens = encoding.encode(prompt, "all", []);
-  if (tokens.length <= maxTokens) {
+  const charBudget = approximateCharacterBudget(maxTokens);
+  if (prompt.length <= charBudget) {
     return prompt;
   }
 
-  return encoding.decode(tokens.slice(tokens.length - maxTokens));
+  return prompt.slice(prompt.length - charBudget);
 }
 
-const MAX_TOKEN_SAFETY_BUFFER = 1000;
-const TOKEN_SAFETY_PROPORTION = 0.02;
+const MAX_TOKEN_SAFETY_BUFFER = 2000;
+const TOKEN_SAFETY_PROPORTION = 0.1;
 export function getTokenCountingBufferSafety(contextLength: number) {
   return Math.min(
     MAX_TOKEN_SAFETY_BUFFER,
@@ -484,9 +408,7 @@ function compileChatMessages({
 }
 
 async function cleanupAsyncEncoders(): Promise<void> {
-  try {
-    await llamaAsyncEncoder.close();
-  } catch (e) {}
+  await Promise.resolve();
 }
 
 export {
