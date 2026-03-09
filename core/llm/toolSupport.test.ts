@@ -2,70 +2,6 @@
 import { PROVIDER_TOOL_SUPPORT, isRecommendedAgentModel } from "./toolSupport";
 
 describe("PROVIDER_TOOL_SUPPORT", () => {
-  describe("continue-proxy", () => {
-    const supportsFn = PROVIDER_TOOL_SUPPORT["continue-proxy"];
-
-    it("should return true for Claude 3.5 models", () => {
-      expect(
-        supportsFn("ownerSlug/packageSlug/anthropic/claude-3-5-sonnet"),
-      ).toBe(true);
-      expect(
-        supportsFn("ownerSlug/packageSlug/anthropic/claude-3.5-sonnet"),
-      ).toBe(true);
-    });
-
-    it("should return true for Claude 3.7 models", () => {
-      expect(
-        supportsFn("ownerSlug/packageSlug/anthropic/claude-3-7-haiku"),
-      ).toBe(true);
-      expect(
-        supportsFn("ownerSlug/packageSlug/anthropic/claude-3.7-sonnet"),
-      ).toBe(true);
-    });
-
-    it("should return true for GPT-4 models", () => {
-      expect(supportsFn("ownerSlug/packageSlug/openai/gpt-4-turbo")).toBe(true);
-      expect(
-        supportsFn("ownerSlug/packageSlug/openai/gpt-4-1106-preview"),
-      ).toBe(true);
-    });
-
-    it("should return true for Gemma models", () => {
-      expect(supportsFn("ownerSlug/packageSlug/openai/gemma")).toBe(true);
-      expect(supportsFn("ownerSlug/packageSlug/openai/gemma3")).toBe(true);
-    });
-
-    it("should return true for O3 models", () => {
-      expect(supportsFn("ownerSlug/packageSlug/openai/o3-preview")).toBe(true);
-    });
-
-    it("should return true for Gemini models", () => {
-      expect(supportsFn("ownerSlug/packageSlug/gemini/gemini-pro")).toBe(true);
-      expect(supportsFn("ownerSlug/packageSlug/gemini/gemini-2.5-pro")).toBe(
-        true,
-      );
-    });
-
-    it("should return false for unsupported models", () => {
-      expect(supportsFn("ownerSlug/packageSlug/openai/gpt-3.5-turbo")).toBe(
-        false,
-      );
-      expect(supportsFn("ownerSlug/packageSlug/anthropic/claude-2")).toBe(
-        false,
-      );
-      expect(supportsFn("ownerSlug/packageSlug/together/llama-3")).toBe(false);
-    });
-
-    it("should handle case insensitivity", () => {
-      expect(
-        supportsFn("ownerSlug/packageSlug/anthropic/CLAUDE-3-5-sonnet"),
-      ).toBe(true);
-      expect(supportsFn("ownerSlug/packageSlug/openai/GPT-4-turbo")).toBe(true);
-      expect(supportsFn("ownerSlug/packageSlug/openai/Gemma3")).toBe(true);
-      expect(supportsFn("ownerSlug/packageSlug/gemini/GEMINI-pro")).toBe(true);
-    });
-  });
-
   describe("anthropic", () => {
     const supportsFn = PROVIDER_TOOL_SUPPORT["anthropic"];
 
@@ -154,50 +90,6 @@ describe("PROVIDER_TOOL_SUPPORT", () => {
     it("should handle case insensitivity", () => {
       expect(supportsFn("GEMINI-pro")).toBe(true);
       expect(supportsFn("Gemini-2.5-Pro")).toBe(true);
-    });
-  });
-
-  describe("bedrock", () => {
-    const supportsFn = PROVIDER_TOOL_SUPPORT["bedrock"];
-
-    it("should return true for Claude 3.5 Sonnet models", () => {
-      expect(supportsFn("anthropic.claude-3-5-sonnet-20240620-v1:0")).toBe(
-        true,
-      );
-      expect(supportsFn("anthropic.claude-3.5-sonnet-20240620-v1:0")).toBe(
-        true,
-      );
-    });
-
-    it("should return true for Claude 3.7 Sonnet models", () => {
-      expect(supportsFn("anthropic.claude-3-7-sonnet-20240620-v1:0")).toBe(
-        true,
-      );
-      expect(supportsFn("anthropic.claude-3.7-sonnet-20240620-v1:0")).toBe(
-        true,
-      );
-    });
-
-    it("should return undefined for Claude Haiku and Opus models", () => {
-      expect(supportsFn("anthropic.claude-3-5-haiku-20240307-v1:0")).toBe(true);
-      expect(supportsFn("anthropic.claude-3.5-haiku-20240620-v1:0")).toBe(true);
-      expect(supportsFn("anthropic.claude-3-7-haiku-20240620-v1:0")).toBe(true);
-      expect(supportsFn("anthropic.claude-3-5-opus-20240620-v1:0")).toBe(true);
-      expect(supportsFn("anthropic.claude-3.7-opus-20240620-v1:0")).toBe(true);
-    });
-
-    it("should return undefined for other unsupported models", () => {
-      expect(supportsFn("anthropic.claude-instant-v1")).toBe(false);
-      expect(supportsFn("anthropic.titan-text-express-v1")).toBe(false);
-    });
-
-    it("should handle case insensitivity", () => {
-      expect(supportsFn("ANTHROPIC.CLAUDE-3-5-SONNET-20240620-v1:0")).toBe(
-        true,
-      );
-      expect(supportsFn("ANTHROPIC.CLAUDE-3.7-SONNET-20240620-v1:0")).toBe(
-        true,
-      );
     });
   });
 
@@ -395,11 +287,9 @@ describe("PROVIDER_TOOL_SUPPORT", () => {
 
   describe("edge cases", () => {
     it("should handle empty model names", () => {
-      expect(PROVIDER_TOOL_SUPPORT["continue-proxy"]("")).toBe(false);
       expect(PROVIDER_TOOL_SUPPORT["anthropic"]("")).toBe(false);
       expect(PROVIDER_TOOL_SUPPORT["openai"]("")).toBe(false);
       expect(PROVIDER_TOOL_SUPPORT["gemini"]("")).toBe(false);
-      expect(PROVIDER_TOOL_SUPPORT["bedrock"]("")).toBe(false);
       expect(PROVIDER_TOOL_SUPPORT["ollama"]("")).toBe(false);
       expect(PROVIDER_TOOL_SUPPORT["lmstudio"]("")).toBe(false);
       expect(PROVIDER_TOOL_SUPPORT["novita"]("")).toBe(false);

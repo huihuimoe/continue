@@ -70,7 +70,7 @@
   ],
   "systemMessage": "TEST_SYS_MSG",
   "analytics": {
-    "provider": "continue-proxy"
+    "provider": "posthog"
   },
   "tabAutocompleteModel": {
     "title": "TEST LLM",

@@ -1,22 +1,5 @@
-import { parseProxyModelName } from "@continuedev/config-yaml";
-
 export const PROVIDER_TOOL_SUPPORT: Record<string, (model: string) => boolean> =
   {
-    "continue-proxy": (model) => {
-      try {
-        const { provider, model: _model } = parseProxyModelName(model);
-        if (provider && _model && provider !== "continue-proxy") {
-          const fn = PROVIDER_TOOL_SUPPORT[provider];
-          if (fn) {
-            return fn(_model);
-          }
-        }
-      } catch (e) {}
-
-      return ["claude", "gpt-4", "o3", "gemini", "gemma"].some((part) =>
-        model.toLowerCase().startsWith(part),
-      );
-    },
     anthropic: (model) => {
       if (model.includes("claude-2") || model.includes("claude-instant")) {
         return false;
@@ -104,28 +87,6 @@ export const PROVIDER_TOOL_SUPPORT: Record<string, (model: string) => boolean> =
       return ["grok-3", "grok-4", "grok-4-1", "grok-code"].some((val) =>
         lowerCaseModel.includes(val),
       );
-    },
-    bedrock: (model) => {
-      if (model.includes("claude-2") || model.includes("claude-instant")) {
-        return false;
-      }
-      if (
-        [
-          "claude",
-          "nova-lite",
-          "nova-pro",
-          "nova-micro",
-          "nova-premier",
-          "gpt-oss",
-          "llama4",
-          "llama-4",
-          "deepseek",
-        ].some((part) => model.toLowerCase().includes(part))
-      ) {
-        return true;
-      }
-
-      return false;
     },
     mistral: (model) => {
       // https://docs.mistral.ai/capabilities/function_calling/

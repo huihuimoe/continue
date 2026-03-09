@@ -114,75 +114,11 @@ export function packageIdentifierToShorthandSlug(
   }
 }
 
-function getContinueProxyModelName(
-  packageIdentifier: PackageIdentifier,
-  provider: string,
-  model: string,
-): string {
-  return `${packageIdentifierToShorthandSlug(packageIdentifier)}/${provider}/${model}`;
-}
-
 export function useProxyForUnrenderedSecrets(
   config: AssistantUnrolled,
-  packageIdentifier: PackageIdentifier,
-  orgScopeId: string | null,
-  onPremProxyUrl: string | null,
+  _packageIdentifier: PackageIdentifier,
+  _orgScopeId: string | null,
+  _onPremProxyUrl: string | null,
 ): AssistantUnrolled {
-  if (config.models) {
-    for (let i = 0; i < config.models.length; i++) {
-      const apiKeyLocation = getUnrenderedSecretLocation(
-        config.models[i]?.apiKey,
-      );
-      const encodedApiKeyLocation = apiKeyLocation
-        ? encodeSecretLocation(apiKeyLocation)
-        : undefined;
-
-      let encodedEnvSecretLocations: Record<string, string> | undefined =
-        undefined;
-      if (config.models[i]?.env) {
-        Object.entries(config.models[i]?.env!).forEach(([key, value]) => {
-          if (typeof value === "string") {
-            const secretLocation = getUnrenderedSecretLocation(value);
-            if (secretLocation) {
-              encodedEnvSecretLocations = {
-                ...encodedEnvSecretLocations,
-                [key]: encodeSecretLocation(secretLocation),
-              };
-            }
-          }
-        });
-      }
-
-      if (encodedApiKeyLocation || encodedEnvSecretLocations) {
-        config.models[i] = {
-          ...config.models[i],
-          name: config.models[i]?.name ?? "",
-          provider: "continue-proxy",
-          model: getContinueProxyModelName(
-            packageIdentifier,
-            config.models[i]?.provider ?? "",
-            config.models[i]?.model ?? "",
-          ),
-          apiKeyLocation: encodedApiKeyLocation,
-          envSecretLocations: encodedEnvSecretLocations,
-          orgScopeId,
-          onPremProxyUrl,
-          apiKey: undefined,
-        };
-      }
-    }
-  }
-
   return config;
 }
-
-/** The additional properties that are added to the otherwise OpenAI-compatible body when requesting a Continue proxy */
-export const continuePropertiesSchema = z.object({
-  apiKeyLocation: z.string().optional(),
-  envSecretLocations: z.record(z.string(), z.string()).optional(),
-  apiBase: z.string().optional(),
-  orgScopeId: z.string().nullable(),
-  env: z.record(z.string(), z.any()).optional(),
-});
-
-export type ContinueProperties = z.infer<typeof continuePropertiesSchema>;

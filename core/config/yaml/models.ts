@@ -117,9 +117,6 @@ async function modelConfigToBaseLLM({
   if ("secretAccessKey" in env && typeof env.secretAccessKey === "string") {
     options.secretAccessKey = env.secretAccessKey;
   }
-  if ("modelArn" in env && typeof env.modelArn === "string") {
-    options.modelArn = env.modelArn;
-  }
   if ("aiGatewaySlug" in env && typeof env.aiGatewaySlug === "string") {
     options.aiGatewaySlug = env.aiGatewaySlug;
   }

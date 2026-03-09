@@ -155,19 +155,19 @@ describe("E2E Scenarios", () => {
     expect(openAiModel.apiKey).toBe("sk-123");
 
     const geminiModel = config?.models?.[1]!;
-    expect(geminiModel.provider).toBe("continue-proxy");
-    expect(geminiModel.apiKey).toBeUndefined();
+    expect(geminiModel.provider).toBe("gemini");
     const geminiSecretLocation = "organization:test-org/GEMINI_API_KEY";
-    expect((geminiModel as any).apiKeyLocation).toBe(geminiSecretLocation);
+    expect(geminiModel.apiKey).toBe(`\${{ secrets.${geminiSecretLocation} }}`);
+    expect((geminiModel as any).apiKeyLocation).toBeUndefined();
 
     const anthropicModel = config?.models?.[2]!;
-    expect(anthropicModel.provider).toBe("continue-proxy");
-    expect(anthropicModel.apiKey).toBeUndefined();
+    expect(anthropicModel.provider).toBe("anthropic");
     const anthropicSecretLocation =
       "models_add_on:test-org/claude35sonnet/ANTHROPIC_API_KEY";
-    expect((anthropicModel as any).apiKeyLocation).toBe(
-      anthropicSecretLocation,
+    expect(anthropicModel.apiKey).toBe(
+      `\${{ secrets.${anthropicSecretLocation} }}`,
     );
+    expect((anthropicModel as any).apiKeyLocation).toBeUndefined();
 
     const proxyOllamaModel = config?.models?.[3]!;
     expect(proxyOllamaModel.provider).toBe("ollama");

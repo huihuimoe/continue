@@ -53,10 +53,7 @@ const PROVIDER_HANDLES_TEMPLATING: string[] = [
   "novita",
   "msty",
   "anthropic",
-  "bedrock",
   "cohere",
-  "sagemaker",
-  "continue-proxy",
   "mistral",
   "mimo",
   "sambanova",
@@ -75,7 +72,6 @@ const PROVIDER_HANDLES_TEMPLATING: string[] = [
   // TODO add these, change to inverted logic so only the ones that need templating are hardcoded
   // Asksage.ts
   // Azure.ts
-  // BedrockImport.ts
   // Cerebras.ts
   // Cloudflare.ts
   // CometAPI.ts
@@ -116,9 +112,6 @@ const PROVIDER_SUPPORTS_IMAGES: string[] = [
   "gemini",
   "msty",
   "anthropic",
-  "bedrock",
-  "sagemaker",
-  "continue-proxy",
   "openrouter",
   "venice",
   "sambanova",
@@ -229,9 +222,7 @@ function modelSupportsReasoning(
 
 const PARALLEL_PROVIDERS: string[] = [
   "anthropic",
-  "bedrock",
   "cohere",
-  "sagemaker",
   "deepinfra",
   "gemini",
   "huggingface-inference-api",

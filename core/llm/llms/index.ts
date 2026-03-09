@@ -12,8 +12,6 @@ import { BaseLLM } from "../index";
 import Anthropic from "./Anthropic";
 import Asksage from "./Asksage";
 import Azure from "./Azure";
-import Bedrock from "./Bedrock";
-import BedrockImport from "./BedrockImport";
 import Cerebras from "./Cerebras";
 import Cloudflare from "./Cloudflare";
 import Cohere from "./Cohere";
@@ -52,11 +50,9 @@ import OpenRouter from "./OpenRouter";
 import OVHcloud from "./OVHcloud";
 import { Relace } from "./Relace";
 import Replicate from "./Replicate";
-import SageMaker from "./SageMaker";
 import SambaNova from "./SambaNova";
 import Scaleway from "./Scaleway";
 import SiliconFlow from "./SiliconFlow";
-import ContinueProxy from "./stubs/ContinueProxy";
 import TARS from "./TARS";
 import TestLLM from "./Test";
 import TextGenWebUI from "./TextGenWebUI";
@@ -92,15 +88,11 @@ export const LLMClasses = [
   LMStudio,
   Mistral,
   Mimo,
-  Bedrock,
-  BedrockImport,
-  SageMaker,
   DeepInfra,
   Flowise,
   Groq,
   Fireworks,
   NCompass,
-  ContinueProxy,
   Cloudflare,
   Deepseek,
   Docker,
@@ -179,10 +171,6 @@ export async function llmFromDescription(
     logger: llmLogger,
     uniqueId,
   };
-
-  if (desc.provider === "continue-proxy") {
-    options.apiKey = ideSettings.userToken;
-  }
 
   return new cls(options);
 }

@@ -4,10 +4,8 @@ import { AiSdkApi } from "./apis/AiSdk.js";
 import { AnthropicApi } from "./apis/Anthropic.js";
 import { AskSageApi } from "./apis/AskSage.js";
 import { AzureApi } from "./apis/Azure.js";
-import { BedrockApi } from "./apis/Bedrock.js";
 import { CohereApi } from "./apis/Cohere.js";
 import { CometAPIApi } from "./apis/CometAPI.js";
-import { ContinueProxyApi } from "./apis/ContinueProxy.js";
 import { DeepSeekApi } from "./apis/DeepSeek.js";
 import { GeminiApi } from "./apis/Gemini.js";
 import { InceptionApi } from "./apis/Inception.js";
@@ -97,8 +95,6 @@ export function constructLlmApi(config: LLMConfig): BaseLlmApi | undefined {
       return new OpenAIApi(config);
     case "azure":
       return new AzureApi(config);
-    case "bedrock":
-      return new BedrockApi(config);
     case "cohere":
       return new CohereApi(config);
     case "cometapi":
@@ -125,8 +121,6 @@ export function constructLlmApi(config: LLMConfig): BaseLlmApi | undefined {
       return new VertexAIApi(config);
     case "llamastack":
       return new LlamastackApi(config);
-    case "continue-proxy":
-      return new ContinueProxyApi(config);
     case "xAI":
       return openAICompatible("https://api.x.ai/v1/", config);
     case "zAI":

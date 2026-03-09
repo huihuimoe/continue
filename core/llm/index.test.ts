@@ -198,4 +198,10 @@ describe("BaseLLM", () => {
       });
     });
   });
+
+  test("should not register SageMaker provider", () => {
+    expect(LLMClasses.some((llm) => llm.providerName === "sagemaker")).toBe(
+      false,
+    );
+  });
 });

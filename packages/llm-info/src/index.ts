@@ -1,6 +1,5 @@
 import { Anthropic } from "./providers/anthropic.js";
 import { Azure } from "./providers/azure.js";
-import { Bedrock } from "./providers/bedrock.js";
 import { Cohere } from "./providers/cohere.js";
 import { CometAPI } from "./providers/cometapi.js";
 import { Gemini } from "./providers/gemini.js";
@@ -22,7 +21,6 @@ export const allModelProviders: ModelProvider[] = [
   Azure,
   Ollama,
   Vllm,
-  Bedrock,
   Cohere,
   CometAPI,
   xAI,

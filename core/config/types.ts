@@ -508,7 +508,6 @@ declare global {
   
     // AWS options
     profile?: string;
-    modelArn?: string;
   
     // AWS and GCP Options
     region?: string;
@@ -784,7 +783,6 @@ export interface IdeSettings {
     | "os"
     | "currentFile"
     | "outline"
-    | "continue-proxy"
     | "highlights"
     | "file"
     | "issue"

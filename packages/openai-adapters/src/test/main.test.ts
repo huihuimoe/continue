@@ -1,7 +1,6 @@
 import { ModelConfig } from "@continuedev/config-yaml";
 import * as dotenv from "dotenv";
 import { vi } from "vitest";
-import { BedrockApi } from "../apis/Bedrock.js";
 import { DEEPSEEK_API_BASE } from "../apis/DeepSeek.js";
 import { INCEPTION_API_BASE } from "../apis/Inception.js";
 import { OpenAIApi } from "../apis/OpenAI.js";
@@ -334,66 +333,26 @@ describe("Configuration", () => {
     });
   });
 
-  describe("bedrock authentication", () => {
-    it("should configure Bedrock with API key authentication", () => {
+  describe("removed providers", () => {
+    it("should not construct bedrock after provider removal", () => {
       const bedrock = constructLlmApi({
-        provider: "bedrock",
+        provider: "bedrock" as any,
         apiKey: "test-api-key",
         env: {
           region: "us-east-1",
         },
       });
 
-      expect(bedrock).toBeInstanceOf(BedrockApi);
+      expect(bedrock).toBeUndefined();
     });
 
-    it("should configure Bedrock with IAM credentials", () => {
-      const bedrock = constructLlmApi({
-        provider: "bedrock",
-        env: {
-          region: "us-west-2",
-          accessKeyId: "test-access-key",
-          secretAccessKey: "test-secret-key",
-        },
-      });
+    it("should not construct continue-proxy after provider removal", () => {
+      const continueProxy = constructLlmApi({
+        provider: "continue-proxy" as any,
+        apiBase: "https://proxy.example.com",
+      } as any);
 
-      expect(bedrock).toBeInstanceOf(BedrockApi);
-    });
-
-    it("should configure Bedrock with AWS profile", () => {
-      const bedrock = constructLlmApi({
-        provider: "bedrock",
-        env: {
-          region: "eu-west-1",
-          profile: "my-profile",
-        },
-      });
-
-      expect(bedrock).toBeInstanceOf(BedrockApi);
-    });
-
-    it("should throw error if only accessKeyId is provided", () => {
-      expect(() => {
-        constructLlmApi({
-          provider: "bedrock",
-          env: {
-            region: "us-east-1",
-            accessKeyId: "test-access-key",
-          },
-        });
-      }).toThrow("secretAccessKey is required");
-    });
-
-    it("should throw error if only secretAccessKey is provided", () => {
-      expect(() => {
-        constructLlmApi({
-          provider: "bedrock",
-          env: {
-            region: "us-east-1",
-            secretAccessKey: "test-secret-key",
-          },
-        });
-      }).toThrow("accessKeyId is required");
+      expect(continueProxy).toBeUndefined();
     });
   });
 });

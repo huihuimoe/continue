@@ -530,7 +530,6 @@ export interface LLMOptions {
 
   // AWS options
   profile?: string;
-  modelArn?: string;
   accessKeyId?: string;
   secretAccessKey?: string;
 
@@ -839,7 +838,6 @@ export type ContextProviderName =
   | "os"
   | "currentFile"
   | "outline"
-  | "continue-proxy"
   | "highlights"
   | "file"
   | "issue"
@@ -1180,7 +1178,6 @@ export interface JSONModelDescription {
 
   region?: string;
   profile?: string;
-  modelArn?: string;
   apiType?: "openai" | "azure";
   apiVersion?: string;
   deployment?: string;
