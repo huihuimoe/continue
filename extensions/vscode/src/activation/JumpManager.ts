@@ -1,6 +1,5 @@
 import { NextEditProvider } from "core/nextEdit/NextEditProvider";
-// @ts-ignore
-import svgBuilder from "svg-builder";
+import svgBuilder, { type SVGBuilderInstance } from "svg-builder";
 import * as vscode from "vscode";
 import { getTheme } from "../util/getTheme";
 import {
@@ -127,9 +126,7 @@ export class JumpManager {
       // NOTE: it's critical to use svgBuilder.newInstance.
       // svgBuilder holds state of previously created SVGs,
       // so you end up with SVGs stacking on top of each other and being interleaved.
-      const builder = svgBuilder.newInstance
-        ? svgBuilder.newInstance()
-        : svgBuilder;
+      const builder = this.createSvgBuilderInstance();
       const svgContent = builder
         .width(SVG_CONFIG.getTipWidth())
         .height(SVG_CONFIG.getTipHeight())
@@ -156,6 +153,49 @@ export class JumpManager {
     } catch (err) {
       console.error("Error creating SVG jump tooltip:", err);
     }
+  }
+
+  private isSvgBuilderInstance(value: unknown): value is SVGBuilderInstance {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+
+    const candidate = value as Record<string, unknown>;
+
+    return (
+      typeof candidate.width === "function" &&
+      typeof candidate.height === "function" &&
+      typeof candidate.text === "function" &&
+      typeof candidate.render === "function"
+    );
+  }
+
+  private createSvgBuilderInstance(): SVGBuilderInstance {
+    const maybeBuilder: unknown = svgBuilder;
+
+    if (
+      typeof maybeBuilder === "object" &&
+      maybeBuilder !== null &&
+      "create" in maybeBuilder &&
+      typeof maybeBuilder.create === "function"
+    ) {
+      return maybeBuilder.create();
+    }
+
+    if (
+      typeof maybeBuilder === "object" &&
+      maybeBuilder !== null &&
+      "newInstance" in maybeBuilder &&
+      typeof maybeBuilder.newInstance === "function"
+    ) {
+      return maybeBuilder.newInstance();
+    }
+
+    if (this.isSvgBuilderInstance(maybeBuilder)) {
+      return maybeBuilder;
+    }
+
+    throw new Error("svg-builder does not expose a usable builder instance");
   }
 
   private _createSvgJumpDecoration(): vscode.TextEditorDecorationType {

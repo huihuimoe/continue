@@ -7,7 +7,7 @@ import {
   RawMessageDeltaEvent,
   RawMessageStartEvent,
   RawMessageStreamEvent,
-  ToolUseBlock,
+  ToolUseBlockParam,
 } from "@anthropic-ai/sdk/resources/messages.mjs";
 import { streamSse } from "@continuedev/fetch";
 import {
@@ -121,7 +121,7 @@ class Anthropic extends BaseLLM {
 
   private convertToolCallsToBlocks(
     toolCall: ToolCallDelta,
-  ): ToolUseBlock | undefined {
+  ): ToolUseBlockParam | undefined {
     const toolCallId = toolCall.id;
     const toolName = toolCall.function?.name;
     if (toolCallId && toolName) {

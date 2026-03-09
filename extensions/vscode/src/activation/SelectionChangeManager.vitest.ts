@@ -129,7 +129,7 @@ describe("SelectionChangeManager", () => {
       logPath: "/mock/log",
       extensionMode: 1, // Production mode
       extension: {} as any,
-    } as vscode.ExtensionContext;
+    } as unknown as vscode.ExtensionContext;
     mockIde = new VsCodeIde(mockContext);
 
     // Get a fresh instance

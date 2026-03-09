@@ -1,9 +1,5 @@
 import { minimatch } from "minimatch";
-import {
-  ContextItemWithId,
-  RuleMetadata,
-  RuleWithSource,
-} from "../..";
+import { ContextItemWithId, RuleMetadata, RuleWithSource } from "../..";
 import type { ToolResultChatMessage, UserChatMessage } from "../chatTypes";
 import { renderChatMessage } from "../../util/messageContent";
 import { getCleanUriPath } from "../../util/uri";

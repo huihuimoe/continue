@@ -1,6 +1,7 @@
+import type { AnyZodObject } from "../base.js";
 import { chatInteractionEventAllSchema } from "./index.js";
 
-export const chatInteractionEventSchema_0_2_0 =
+export const chatInteractionEventSchema_0_2_0: AnyZodObject =
   chatInteractionEventAllSchema.pick({
     // base
     timestamp: true,
@@ -21,7 +22,7 @@ export const chatInteractionEventSchema_0_2_0 =
     rules: true,
   });
 
-export const chatInteractionEventSchema_0_2_0_noCode =
+export const chatInteractionEventSchema_0_2_0_noCode: AnyZodObject =
   chatInteractionEventSchema_0_2_0.omit({
     prompt: true,
     completion: true,

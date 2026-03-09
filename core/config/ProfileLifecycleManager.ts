@@ -126,8 +126,9 @@ export class ProfileLifecycleManager {
     return this.savedConfigResult;
   }
 
-  async getSerializedConfig(
-  ): Promise<ConfigResult<BrowserSerializedContinueConfig>> {
+  async getSerializedConfig(): Promise<
+    ConfigResult<BrowserSerializedContinueConfig>
+  > {
     if (this.savedBrowserConfigResult) {
       return this.savedBrowserConfigResult;
     } else {

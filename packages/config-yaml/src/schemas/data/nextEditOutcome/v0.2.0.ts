@@ -1,6 +1,7 @@
+import type { AnyZodObject } from "../base.js";
 import { nextEditOutcomeEventAllSchema } from "./index.js";
 
-export const nextEditOutcomeEventSchema_0_2_0 =
+export const nextEditOutcomeEventSchema_0_2_0: AnyZodObject =
   nextEditOutcomeEventAllSchema.pick({
     // base
     timestamp: true,
@@ -32,7 +33,7 @@ export const nextEditOutcomeEventSchema_0_2_0 =
     modelName: true,
   });
 
-export const nextEditOutcomeEventSchema_0_2_0_noCode =
+export const nextEditOutcomeEventSchema_0_2_0_noCode: AnyZodObject =
   nextEditOutcomeEventSchema_0_2_0.omit({
     fileUri: true,
     workspaceDirUri: true,

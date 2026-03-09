@@ -71,7 +71,7 @@ describe("convertNextEditModelNameToEnum", () => {
   });
 
   test("returns correct enum when model name is contained in a longer string", () => {
-    expect(convertNextEditModelNameToEnum("inception/mercury-coder")).toBe(
+    expect(convertNextEditModelNameToEnum("inception/mercury-edit")).toBe(
       NEXT_EDIT_MODELS.MERCURY_CODER,
     );
     expect(convertNextEditModelNameToEnum("blah/instinct")).toBe(

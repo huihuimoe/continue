@@ -220,7 +220,7 @@ describe("modelSupportsNextEdit", () => {
       expect(
         modelSupportsNextEdit(
           { nextEdit: false },
-          "mercury-coder",
+          "mercury-edit",
           "Mercury Coder",
         ),
       ).toBe(false);
@@ -231,7 +231,7 @@ describe("modelSupportsNextEdit", () => {
       expect(
         modelSupportsNextEdit(
           { nextEdit: false },
-          "mercury-coder",
+          "mercury-edit",
           "Mercury Coder",
         ),
       ).toBe(false);
@@ -239,8 +239,8 @@ describe("modelSupportsNextEdit", () => {
   });
 
   describe("when capabilities.nextEdit is undefined", () => {
-    it("should return true for mercury-coder model (case insensitive)", () => {
-      expect(modelSupportsNextEdit(undefined, "Mercury-Coder", undefined)).toBe(
+    it("should return true for mercury-edit model (case insensitive)", () => {
+      expect(modelSupportsNextEdit(undefined, "Mercury-Edit", undefined)).toBe(
         true,
       );
     });
@@ -263,11 +263,7 @@ describe("modelSupportsNextEdit", () => {
 
     it("should return true when model contains supported model name as substring", () => {
       expect(
-        modelSupportsNextEdit(
-          undefined,
-          "provider/mercury-coder-v2",
-          undefined,
-        ),
+        modelSupportsNextEdit(undefined, "provider/mercury-edit", undefined),
       ).toBe(true);
     });
 
@@ -276,7 +272,7 @@ describe("modelSupportsNextEdit", () => {
         modelSupportsNextEdit(
           undefined,
           "some-model",
-          "This is mercury-coder model",
+          "This is mercury-edit model",
         ),
       ).toBe(true);
     });
@@ -322,15 +318,15 @@ describe("modelSupportsNextEdit", () => {
     });
 
     it("should handle undefined title gracefully", () => {
-      expect(modelSupportsNextEdit(undefined, "mercury-coder", undefined)).toBe(
+      expect(modelSupportsNextEdit(undefined, "mercury-edit", undefined)).toBe(
         true,
       );
     });
 
     it("should handle case sensitivity correctly", () => {
-      expect(
-        modelSupportsNextEdit(undefined, "MERCURY-CODER", "instinct"),
-      ).toBe(true);
+      expect(modelSupportsNextEdit(undefined, "MERCURY-EDIT", "instinct")).toBe(
+        true,
+      );
     });
 
     it("should handle capabilities with other properties", () => {

@@ -11,6 +11,14 @@ interface TableInfoRow {
 export class DevDataSqliteDb {
   static db: SqliteConnection | null = null;
 
+  private static isReadonlySqliteError(error: unknown): boolean {
+    const sqliteError = error as { code?: string; message?: string };
+    return (
+      sqliteError?.code === "ERR_SQLITE_ERROR" &&
+      sqliteError?.message?.includes("readonly") === true
+    );
+  }
+
   private static async createTables(db: SqliteConnection) {
     db.exec(
       `CREATE TABLE IF NOT EXISTS tokens_generated (
@@ -44,13 +52,25 @@ export class DevDataSqliteDb {
     generatedTokens: number,
   ) {
     const db = await DevDataSqliteDb.get();
-    db?.run(
-      "INSERT INTO tokens_generated (model, provider, tokens_prompt, tokens_generated) VALUES (?, ?, ?, ?)",
-      model,
-      provider,
-      promptTokens,
-      generatedTokens,
-    );
+    try {
+      db?.run(
+        "INSERT INTO tokens_generated (model, provider, tokens_prompt, tokens_generated) VALUES (?, ?, ?, ?)",
+        model,
+        provider,
+        promptTokens,
+        generatedTokens,
+      );
+    } catch (error) {
+      if (DevDataSqliteDb.isReadonlySqliteError(error)) {
+        try {
+          DevDataSqliteDb.db?.close();
+        } catch {}
+        DevDataSqliteDb.db = null;
+        return;
+      }
+
+      throw error;
+    }
   }
 
   public static async getTokensPerDay() {

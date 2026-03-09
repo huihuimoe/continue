@@ -1,14 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type AcceptCallback = () => Promise<void> | void;
+type ConfigUpdateCallback = (...args: any[]) => Promise<void>;
 
 let registeredCommands: Record<string, (...args: any[]) => unknown> = {};
 let lastQuickPick: any;
 let quickPickAcceptCallback: AcceptCallback | undefined;
 let configValues: Record<string, any> = {};
-let configUpdate: ReturnType<typeof vi.fn> = vi
-  .fn()
-  .mockResolvedValue(undefined);
+let configUpdate = vi.fn<ConfigUpdateCallback>().mockResolvedValue(undefined);
 
 vi.mock("vscode", () => ({
   commands: {
@@ -76,7 +75,7 @@ describe("commands", () => {
     lastQuickPick = undefined;
     quickPickAcceptCallback = undefined;
     configValues = {};
-    configUpdate = vi.fn().mockResolvedValue(undefined);
+    configUpdate = vi.fn<ConfigUpdateCallback>().mockResolvedValue(undefined);
   });
 
   it("builds the status bar menu with retained quick pick options and toggles Next Edit", async () => {

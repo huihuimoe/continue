@@ -2,7 +2,13 @@ import { IdeInfo } from "../../index.js";
 
 export type SentryClient = undefined;
 export type SentryScope = undefined;
-export type SentrySeverityLevel = "fatal" | "error" | "warning" | "log" | "info" | "debug";
+export type SentrySeverityLevel =
+  | "fatal"
+  | "error"
+  | "warning"
+  | "log"
+  | "info"
+  | "debug";
 export type SentryExtras = Record<string, any>;
 
 export class SentryLogger {

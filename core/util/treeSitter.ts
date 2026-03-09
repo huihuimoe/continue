@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "path";
 
-import Parser, { Language } from "web-tree-sitter";
+import Parser from "web-tree-sitter";
 import { FileSymbolMap, IDE, SymbolWithRange } from "..";
 import { getUriFileExtension } from "./uri";
 
@@ -140,11 +140,11 @@ export async function getParserForFile(filepath: string) {
 // Loading the wasm files to create a Language object is an expensive operation and with
 // sufficient number of files can result in errors, instead keep a map of language name
 // to Language object
-const nameToLanguage = new Map<string, Language>();
+const nameToLanguage = new Map<string, Parser.Language>();
 
 export async function getLanguageForFile(
   filepath: string,
-): Promise<Language | undefined> {
+): Promise<Parser.Language | undefined> {
   try {
     await Parser.init();
     const extension = getUriFileExtension(filepath);
@@ -199,7 +199,7 @@ export async function getQueryForFile(
 
 async function loadLanguageForFileExt(
   fileExtension: string,
-): Promise<Language> {
+): Promise<Parser.Language> {
   const wasmPath = path.join(
     process.env.NODE_ENV === "test" ? process.cwd() : __dirname,
     ...(process.env.NODE_ENV === "test"

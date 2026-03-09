@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // @ts-ignore no typings available
 import { diff as myersDiff } from "myers-diff";
@@ -50,14 +51,9 @@ function normalizeDisplayedDiff(d: string): string {
 }
 
 async function expectDiff(file: string) {
-  const testFilePath = path.join(
-    __dirname,
-    "edit",
-    "lazy",
-    "test-examples",
-    file + ".diff",
-  );
-  const testFileContents = fs.readFileSync(testFilePath, "utf-8");
+  const fixtureDir = fileURLToPath(new URL("./test-examples", import.meta.url));
+  const resolvedTestFilePath = path.join(fixtureDir, file + ".diff");
+  const testFileContents = fs.readFileSync(resolvedTestFilePath, "utf-8");
   const [oldFile, newFile, expectedDiff] = testFileContents
     .split("\n---\n")
     .map((s) => s.replace(/^\n+/, "").trimEnd());
@@ -69,7 +65,7 @@ async function expectDiff(file: string) {
       "Expected diff was empty. Writing computed diff to the test file",
     );
     fs.writeFileSync(
-      testFilePath,
+      resolvedTestFilePath,
       `${oldFile}\n\n---\n\n${newFile}\n\n---\n\n${displayDiff(
         continueMyersDiff(oldFile, newFile),
       )}`,

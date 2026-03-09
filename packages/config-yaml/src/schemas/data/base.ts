@@ -1,4 +1,6 @@
-import { z } from "zod";
+import { z, type ZodObject, type ZodRawShape } from "zod";
+
+export type AnyZodObject = ZodObject<ZodRawShape>;
 
 export const baseDevDataAllSchema = z.object({
   eventName: z.string(),

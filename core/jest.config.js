@@ -7,7 +7,6 @@ export default {
       "ts-jest",
       {
         useESM: true,
-        isolatedModules: true,
         tsconfig: {
           experimentalDecorators: true,
           emitDecoratorMetadata: true,
@@ -17,8 +16,9 @@ export default {
   },
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
-    "^uuid$": "uuid", // https://stackoverflow.com/a/73626360
+    "^uuid$": "<rootDir>/test/shims/uuid.ts",
     "^@azure/(.*)$": "<rootDir>/node_modules/@azure/$1",
+    "^@continuedev/fetch$": "<rootDir>/test/shims/continuedev-fetch.ts",
     "^mssql$": "<rootDir>/node_modules/mssql",
   },
   extensionsToTreatAsEsm: [".ts"],

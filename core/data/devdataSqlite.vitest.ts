@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { getDevDataSqlitePath } from "../util/paths";
@@ -69,5 +70,32 @@ describe("DevDataSqliteDb", () => {
       { model: "model-a", promptTokens: 4, generatedTokens: 6 },
       { model: "model-b", promptTokens: 10, generatedTokens: 20 },
     ]);
+  });
+
+  it("does not reject when sqlite write fails with readonly database", async () => {
+    const dbPath = getDevDataSqlitePath();
+    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    fs.writeFileSync(dbPath, "");
+
+    DevDataSqliteDb.db = {
+      exec: () => {},
+      run: () => {
+        const error = Object.assign(
+          new Error("attempt to write a readonly database"),
+          {
+            code: "ERR_SQLITE_ERROR",
+          },
+        );
+        throw error;
+      },
+      get: () => undefined,
+      all: () => [],
+      transaction: <T>(callback: () => T) => callback(),
+      close: () => {},
+    } as any;
+
+    await expect(
+      DevDataSqliteDb.logTokensGenerated("model-a", "provider-a", 5, 7),
+    ).resolves.toBeUndefined();
   });
 });

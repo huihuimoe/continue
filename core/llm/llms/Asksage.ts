@@ -1,4 +1,5 @@
-import FormData from "form-data";
+import fs from "node:fs";
+import path from "node:path";
 import {
   ChatMessage,
   CompletionOptions,
@@ -114,6 +115,45 @@ class Asksage extends BaseLLM {
     );
   }
 
+  private appendFileToFormData(form: FormData, value: unknown) {
+    if (Buffer.isBuffer(value)) {
+      form.append("file", new Blob([Uint8Array.from(value)]), "file");
+      return;
+    }
+
+    if (typeof File !== "undefined" && value instanceof File) {
+      form.append("file", value, value.name);
+      return;
+    }
+
+    if (value instanceof Blob) {
+      form.append("file", value, "file");
+      return;
+    }
+
+    if (typeof value === "string") {
+      form.append("file", value);
+      return;
+    }
+
+    if (
+      value &&
+      typeof value === "object" &&
+      "path" in value &&
+      typeof value.path === "string"
+    ) {
+      const filename =
+        "name" in value && typeof value.name === "string"
+          ? value.name
+          : path.basename(value.path);
+
+      form.append("file", new Blob([fs.readFileSync(value.path)]), filename);
+      return;
+    }
+
+    throw new Error("Unsupported AskSage file payload");
+  }
+
   private toFormData(args: AskSageRequestArgs): FormData {
     const form = new FormData();
 
@@ -121,13 +161,7 @@ class Asksage extends BaseLLM {
       if (value === undefined || value === null) continue;
 
       if (key === "file" && value) {
-        if (Buffer.isBuffer(value)) {
-          form.append("file", value, "file");
-        } else if (typeof value === "string") {
-          form.append("file", value);
-        } else {
-          form.append("file", value as Buffer);
-        }
+        this.appendFileToFormData(form, value);
       } else if (Array.isArray(value) || typeof value === "object") {
         form.append(key, JSON.stringify(value));
       } else {
@@ -241,7 +275,6 @@ class Asksage extends BaseLLM {
           method: "POST",
           headers: {
             ...headers,
-            ...form.getHeaders(),
           },
           body: form as unknown as BodyInit,
           signal,
@@ -317,7 +350,6 @@ class Asksage extends BaseLLM {
           method: "POST",
           headers: {
             ...headers,
-            ...form.getHeaders(),
           },
           body: form as unknown as BodyInit,
           signal,

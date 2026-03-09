@@ -40,7 +40,7 @@ describe("NextEditPromptEngine", () => {
       expect(template).toContain("<|file_sep|>updated/{{{currentFilePath}}}");
     });
 
-    it("mercury-coder template should contain expected tokens", () => {
+    it("mercury-edit template should contain expected tokens", () => {
       const template =
         NEXT_EDIT_MODEL_TEMPLATES[NEXT_EDIT_MODELS.MERCURY_CODER].template;
 

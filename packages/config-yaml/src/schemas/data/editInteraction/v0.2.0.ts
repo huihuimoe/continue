@@ -1,6 +1,7 @@
+import type { AnyZodObject } from "../base.js";
 import { editInteractionEventAllSchema } from "./index.js";
 
-export const editInteractionEventSchema_0_2_0 =
+export const editInteractionEventSchema_0_2_0: AnyZodObject =
   editInteractionEventAllSchema.pick({
     // base
     timestamp: true,
@@ -19,7 +20,7 @@ export const editInteractionEventSchema_0_2_0 =
     filepath: true,
   });
 
-export const editInteractionEventSchema_0_2_0_noCode =
+export const editInteractionEventSchema_0_2_0_noCode: AnyZodObject =
   editInteractionEventSchema_0_2_0.omit({
     prompt: true,
     completion: true,

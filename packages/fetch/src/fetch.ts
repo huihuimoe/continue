@@ -21,10 +21,10 @@ function requiresCompatibilityTransport(
 
   return Boolean(
     requestOptions.timeout !== undefined ||
-      requestOptions.verifySsl !== undefined ||
-      requestOptions.caBundlePath ||
-      requestOptions.clientCertificate ||
-      requestOptions.noProxy?.length,
+    requestOptions.verifySsl !== undefined ||
+    requestOptions.caBundlePath ||
+    requestOptions.clientCertificate ||
+    requestOptions.noProxy?.length,
   );
 }
 

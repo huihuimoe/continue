@@ -85,23 +85,23 @@ function parseShikiLines(shikiHtml: string): ParsedShikiLine[] {
     return [];
   }
 
-  return Array.from(codeBlockMatch[1].matchAll(/<span class="([^"]*)">([\s\S]*?)<\/span>/g)).map(
-    ([, className, content]) => ({
-      className,
-      spans: Array.from(content.matchAll(/<span([^>]*)>([\s\S]*?)<\/span>|([^<]+)/g)).map(
-        (match) => {
-          const tag = match[1] ?? "";
-          const nestedText = match[2];
-          const plainText = match[3];
-          return {
-            text: stripTags(nestedText ?? plainText ?? ""),
-            style: getAttribute(tag, "style"),
-            className: getAttribute(tag, "class"),
-          };
-        },
-      ),
+  return Array.from(
+    codeBlockMatch[1].matchAll(/<span class="([^"]*)">([\s\S]*?)<\/span>/g),
+  ).map(([, className, content]) => ({
+    className,
+    spans: Array.from(
+      content.matchAll(/<span([^>]*)>([\s\S]*?)<\/span>|([^<]+)/g),
+    ).map((match) => {
+      const tag = match[1] ?? "";
+      const nestedText = match[2];
+      const plainText = match[3];
+      return {
+        text: stripTags(nestedText ?? plainText ?? ""),
+        style: getAttribute(tag, "style"),
+        className: getAttribute(tag, "class"),
+      };
     }),
-  );
+  }));
 }
 
 function getPreBackgroundColor(shikiHtml: string): string {

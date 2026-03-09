@@ -93,7 +93,9 @@ class DFSWalker {
 
     for (let cur = stack.pop(); cur; cur = stack.pop()) {
       let entries: [string, WalkDirFileType][] = [];
-      const cachedListdir = walkDirCache.dirListCache.get(cur.walkableEntry.uri);
+      const cachedListdir = walkDirCache.dirListCache.get(
+        cur.walkableEntry.uri,
+      );
       if (
         cachedListdir &&
         cachedListdir.time > Date.now() - LIST_DIR_CACHE_TIME
@@ -109,7 +111,9 @@ class DFSWalker {
       }
 
       let newIgnore: Ignore;
-      const cachedIgnore = walkDirCache.dirIgnoreCache.get(cur.walkableEntry.uri);
+      const cachedIgnore = walkDirCache.dirIgnoreCache.get(
+        cur.walkableEntry.uri,
+      );
       if (
         cachedIgnore &&
         cachedIgnore.time > Date.now() - IGNORE_FILE_CACHE_TIME
@@ -163,7 +167,8 @@ class DFSWalker {
             continue;
           }
 
-          const prefixLength = ig.dirname.length === 0 ? 0 : ig.dirname.length + 1;
+          const prefixLength =
+            ig.dirname.length === 0 ? 0 : ig.dirname.length + 1;
           const matchPath = relPath.substring(prefixLength);
           if (ig.ignore.ignores(matchPath)) {
             shouldIgnore = true;
@@ -255,7 +260,9 @@ export async function getIgnoreContext(
     .map(([name]) => name);
 
   const gitIgnoreFile = dirFiles.find((name) => name === ".gitignore");
-  const continueIgnoreFile = dirFiles.find((name) => name === ".continueignore");
+  const continueIgnoreFile = dirFiles.find(
+    (name) => name === ".continueignore",
+  );
 
   const getGitIgnorePatterns = async () => {
     if (gitIgnoreFile) {

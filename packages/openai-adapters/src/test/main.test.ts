@@ -118,7 +118,7 @@ const TESTS: Omit<ModelConfig & { options?: TestConfigOptions }, "name">[] = [
   },
   {
     provider: "inception",
-    model: "mercury-coder",
+    model: "mercury-edit",
     apiKey: process.env.INCEPTION_API_KEY!,
     roles: ["chat"],
     options: {

@@ -2,10 +2,7 @@ import { BLOCK_TYPES } from "@continuedev/config-yaml";
 import ignore from "ignore";
 import * as URI from "uri-js";
 import { IDE } from "..";
-import {
-  DEFAULT_IGNORE_DIRS,
-  DEFAULT_IGNORE_FILETYPES,
-} from "../util/ignore";
+import { DEFAULT_IGNORE_DIRS, DEFAULT_IGNORE_FILETYPES } from "../util/ignore";
 import { walkDir } from "../util/walkDir";
 import { RULES_MARKDOWN_FILENAME } from "../llm/rules/constants";
 import { getGlobalFolderWithName } from "../util/paths";

@@ -216,13 +216,11 @@ export interface BaseUnrollAssistantOptions {
   injectRequestOptions?: RequestOptions;
 }
 
-export interface DoNotRenderSecretsUnrollAssistantOptions
-  extends BaseUnrollAssistantOptions {
+export interface DoNotRenderSecretsUnrollAssistantOptions extends BaseUnrollAssistantOptions {
   renderSecrets: false;
 }
 
-export interface RenderSecretsUnrollAssistantOptions
-  extends BaseUnrollAssistantOptions {
+export interface RenderSecretsUnrollAssistantOptions extends BaseUnrollAssistantOptions {
   renderSecrets: true;
   orgScopeId: string | null;
   currentUserSlug: string;
@@ -414,7 +412,12 @@ export async function unrollBlocks(
     const blockPromises = assistant[section].map(
       async (unrolledBlock, index) => {
         // "uses/with" block
-        if ("uses" in unrolledBlock) {
+        if (
+          typeof unrolledBlock === "object" &&
+          unrolledBlock !== null &&
+          "uses" in unrolledBlock &&
+          typeof unrolledBlock.uses === "string"
+        ) {
           try {
             const blockIdentifier = decodePackageIdentifier(unrolledBlock.uses);
 
@@ -452,15 +455,7 @@ export async function unrollBlocks(
             }
             return { index, block: null, error: null };
           } catch (err) {
-            let msg = "";
-            if (
-              typeof unrolledBlock.uses !== "string" &&
-              "filePath" in unrolledBlock.uses
-            ) {
-              msg = `${(err as Error).message}.\n> ${unrolledBlock.uses.filePath}`;
-            } else {
-              msg = `${(err as Error).message}.\n> ${JSON.stringify(unrolledBlock.uses)}`;
-            }
+            const msg = `${(err as Error).message}.\n> ${JSON.stringify(unrolledBlock.uses)}`;
 
             console.error(
               `Failed to unroll block ${JSON.stringify(unrolledBlock.uses)}: ${(err as Error).message}`,
@@ -845,8 +840,10 @@ export function mergeOverrides<T extends Record<string, any>>(
 }
 
 function formatZodError(error: any): string {
-  if (error.errors && Array.isArray(error.errors)) {
-    return error.errors
+  const issues = error.issues ?? error.errors;
+
+  if (Array.isArray(issues)) {
+    return issues
       .map((e: any) => {
         const path = e.path.length > 0 ? `${e.path.join(".")}: ` : "";
         return `${path}${e.message}`;

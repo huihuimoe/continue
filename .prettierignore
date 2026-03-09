@@ -3,6 +3,7 @@ binary/build
 binary/out
 binary/tmp
 core/.continue-test
+core/test/.continue-test
 docs/.docusaurus
 docs/**/*.mdx
 extensions/.continue-debug
@@ -24,6 +25,7 @@ gui/dist
 **/.continueignore
 .continue/rules/mintlify-formatting.md
 CHANGELOG.md
+CONTRIBUTING.md
 **/continue_tutorial.py
 **/node_modules
 **/CODEOWNERS

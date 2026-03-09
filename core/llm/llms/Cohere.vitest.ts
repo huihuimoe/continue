@@ -392,8 +392,30 @@ describe("Cohere", () => {
       mockStream: [
         '{"id":"94e3907b-d214-475e-a53f-ae81c76b6e43","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}',
         '{"type":"content-start","index":0,"delta":{"message":{"content":{"type":"thinking","thinking":""}}}}',
-        '{"type":"content-delta","index":0,"delta":{"message":{"content":{"thinking":"Alright, the user said \"hello again\". Let me check the chat history."}}}}',
-        '{"type":"content-delta","index":0,"delta":{"message":{"content":{"thinking":" The user first said \"hello\", and I\'ll keep it friendly and open-ended."}}}}',
+        {
+          type: "content-delta",
+          index: 0,
+          delta: {
+            message: {
+              content: {
+                thinking:
+                  'Alright, the user said "hello again". Let me check the chat history.',
+              },
+            },
+          },
+        },
+        {
+          type: "content-delta",
+          index: 0,
+          delta: {
+            message: {
+              content: {
+                thinking:
+                  ' The user first said "hello", and I\'ll keep it friendly and open-ended.',
+              },
+            },
+          },
+        },
         '{"type":"content-end","index":0}',
         '{"type":"content-start","index":1,"delta":{"message":{"content":{"type":"text","text":""}}}}',
         '{"type":"content-delta","index":1,"delta":{"message":{"content":{"text":"Hello again!"}}}}',
@@ -633,8 +655,32 @@ describe("Cohere", () => {
           '{"type":"tool-plan-delta","delta":{"message":{"tool_plan":"I will look up the weather"}}}',
           '{"type":"tool-plan-delta","delta":{"message":{"tool_plan":" in New York"}}}',
           '{"type":"tool-call-start","index":0,"delta":{"message":{"tool_calls":{"id":"get_weather_qm3vz6v54dmw","type":"function","function":{"name":"get_weather","arguments":""}}}}}',
-          '{"type":"tool-call-delta","index":0,"delta":{"message":{"tool_calls":{"function":{"arguments":"{\\"location\\": \\""}}}}',
-          '{"type":"tool-call-delta","index":0,"delta":{"message":{"tool_calls":{"function":{"arguments":"\\"New York\\"}"}}}}',
+          {
+            type: "tool-call-delta",
+            index: 0,
+            delta: {
+              message: {
+                tool_calls: {
+                  function: {
+                    arguments: '{"location": "',
+                  },
+                },
+              },
+            },
+          },
+          {
+            type: "tool-call-delta",
+            index: 0,
+            delta: {
+              message: {
+                tool_calls: {
+                  function: {
+                    arguments: '"New York"}',
+                  },
+                },
+              },
+            },
+          },
           '{"type":"tool-call-end","index":0}',
           '{"type":"message-end","delta":{"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":17,"output_tokens":19},"tokens":{"input_tokens":1434,"output_tokens":48},"cached_tokens":992}}}',
         ],
@@ -709,8 +755,32 @@ describe("Cohere", () => {
         mockStream: [
           '{"id":"94e3907b-d214-475e-a53f-ae81c76b6e43","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}',
           '{"type":"tool-call-start","index":0,"delta":{"message":{"tool_calls":{"id":"get_weather_qm3vz6v54dmw","type":"function","function":{"name":"get_weather","arguments":""}}}}}',
-          '{"type":"tool-call-delta","index":0,"delta":{"message":{"tool_calls":{"function":{"arguments":"{\\"location\\": \\""}}}}',
-          '{"type":"tool-call-delta","index":0,"delta":{"message":{"tool_calls":{"function":{"arguments":"\\"New York\\"}"}}}}',
+          {
+            type: "tool-call-delta",
+            index: 0,
+            delta: {
+              message: {
+                tool_calls: {
+                  function: {
+                    arguments: '{"location": "',
+                  },
+                },
+              },
+            },
+          },
+          {
+            type: "tool-call-delta",
+            index: 0,
+            delta: {
+              message: {
+                tool_calls: {
+                  function: {
+                    arguments: '"New York"}',
+                  },
+                },
+              },
+            },
+          },
           '{"type":"tool-call-end","index":0}',
           '{"type":"message-end","delta":{"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":17,"output_tokens":9},"tokens":{"input_tokens":1174,"output_tokens":36},"cached_tokens":0}}}',
         ],
@@ -789,12 +859,58 @@ describe("Cohere", () => {
         mockStream: [
           '{"id":"94e3907b-d214-475e-a53f-ae81c76b6e43","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}',
           '{"type":"content-start","index":0,"delta":{"message":{"content":{"type":"thinking","thinking":""}}}}',
-          '{"type":"content-delta","index":0,"delta":{"message":{"content":{"thinking":"Okay, the user is asking for the weather in New York. Let me check the available tools. There\'s a tool called get_weather that requires a location parameter. Since the user mentioned New York, I can use that as the location."}}}}',
-          '{"type":"content-delta","index":0,"delta":{"message":{"content":{"thinking":" I need to call the get_weather tool with location set to \"New York\" to retrieve the current weather data. No other tools are available, so this should be the only step needed. Once I get the weather data, I can present it to the user."}}}}',
+          {
+            type: "content-delta",
+            index: 0,
+            delta: {
+              message: {
+                content: {
+                  thinking:
+                    "Okay, the user is asking for the weather in New York. Let me check the available tools. There's a tool called get_weather that requires a location parameter. Since the user mentioned New York, I can use that as the location.",
+                },
+              },
+            },
+          },
+          {
+            type: "content-delta",
+            index: 0,
+            delta: {
+              message: {
+                content: {
+                  thinking:
+                    ' I need to call the get_weather tool with location set to "New York" to retrieve the current weather data. No other tools are available, so this should be the only step needed. Once I get the weather data, I can present it to the user.',
+                },
+              },
+            },
+          },
           '{"type":"content-end","index":0}',
           '{"type":"tool-call-start","index":0,"delta":{"message":{"tool_calls":{"id":"get_weather_qm3vz6v54dmw","type":"function","function":{"name":"get_weather","arguments":""}}}}}',
-          '{"type":"tool-call-delta","index":0,"delta":{"message":{"tool_calls":{"function":{"arguments":"{\\"location\\": \\""}}}}',
-          '{"type":"tool-call-delta","index":0,"delta":{"message":{"tool_calls":{"function":{"arguments":"\\"New York\\"}"}}}}',
+          {
+            type: "tool-call-delta",
+            index: 0,
+            delta: {
+              message: {
+                tool_calls: {
+                  function: {
+                    arguments: '{"location": "',
+                  },
+                },
+              },
+            },
+          },
+          {
+            type: "tool-call-delta",
+            index: 0,
+            delta: {
+              message: {
+                tool_calls: {
+                  function: {
+                    arguments: '"New York"}',
+                  },
+                },
+              },
+            },
+          },
           '{"type":"tool-call-end","index":0}',
           '{"type":"message-end","delta":{"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":17,"output_tokens":9},"tokens":{"input_tokens":1174,"output_tokens":36},"cached_tokens":0}}}',
         ],

@@ -1,12 +1,43 @@
-import { ConfigJson } from "@continuedev/config-types";
+import { ConfigJson, ModelDescription } from "@continuedev/config-types";
 import { ConfigYaml } from "./schemas/index.js";
 import { ModelConfig } from "./schemas/models.js";
 
 type ModelYaml = ModelConfig;
 type PromptYaml = NonNullable<ConfigYaml["prompts"]>[number];
 
+function normalizeRequestHeaders(
+  headers: Record<string, unknown> | undefined,
+): Record<string, string> | undefined {
+  if (!headers) {
+    return undefined;
+  }
+
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+    normalized[key] = String(value);
+  }
+
+  return normalized;
+}
+
+function normalizeRequestOptions(
+  options: ConfigJson["requestOptions"] | undefined,
+): ConfigYaml["requestOptions"] | undefined {
+  if (!options) {
+    return undefined;
+  }
+
+  return {
+    ...options,
+    headers: normalizeRequestHeaders(options.headers),
+  };
+}
+
 function convertModel(
-  m: ConfigJson["models"][number],
+  m: ModelDescription,
   roles: NonNullable<ModelYaml["roles"]>,
 ): ModelYaml {
   return {
@@ -16,7 +47,7 @@ function convertModel(
     apiKey: m.apiKey,
     apiBase: m.apiBase,
     roles,
-    requestOptions: m.requestOptions,
+    requestOptions: normalizeRequestOptions(m.requestOptions),
     defaultCompletionOptions: m.completionOptions,
   };
 }
@@ -59,7 +90,9 @@ export function convertJsonToYamlConfig(configJson: ConfigJson): ConfigYaml {
   const models = configJson.models.map((m) =>
     convertModel(m, ["autocomplete"]),
   );
-  const autocompleteModels = Array.isArray(configJson.tabAutocompleteModel)
+  const autocompleteModels: ModelDescription[] = Array.isArray(
+    configJson.tabAutocompleteModel,
+  )
     ? configJson.tabAutocompleteModel
     : configJson.tabAutocompleteModel
       ? [configJson.tabAutocompleteModel]

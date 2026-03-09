@@ -72,12 +72,12 @@ const modelDescriptionSchema = z.object({
       verifySsl: z.boolean().optional(),
       caBundlePath: z.union([z.string(), z.array(z.string())]).optional(),
       proxy: z.string().optional(),
-      headers: z.record(z.string()).optional(),
-      extraBodyProperties: z.record(z.any()).optional(),
+      headers: z.record(z.string(), z.string()).optional(),
+      extraBodyProperties: z.record(z.string(), z.unknown()).optional(),
       noProxy: z.array(z.string()).optional(),
     })
     .optional(),
-  promptTemplates: z.record(z.string()).optional(),
+  promptTemplates: z.record(z.string(), z.string()).optional(),
 });
 
 const embeddingsProviderSchema = z.object({}).passthrough();

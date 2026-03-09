@@ -163,6 +163,7 @@ export class AnthropicApi implements BaseLlmApi {
       return {
         type: "tool_use",
         id: toolCallId,
+        caller: { type: "direct" },
         name: toolName,
         input: safeParseArgs(
           toolCall.function.arguments,

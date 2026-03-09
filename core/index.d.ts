@@ -98,7 +98,8 @@ export type PromptTemplate = string | PromptTemplateFunction;
 type RequiredLLMOptions = "uniqueId" | "contextLength" | "completionOptions";
 
 export interface ILLM
-  extends Omit<LLMOptions, RequiredLLMOptions>,
+  extends
+    Omit<LLMOptions, RequiredLLMOptions>,
     Required<Pick<LLMOptions, RequiredLLMOptions>> {
   get providerName(): string;
   get underlyingProviderName(): string;

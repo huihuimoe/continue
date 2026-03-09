@@ -74,17 +74,19 @@ export type RulesJson = z.infer<typeof rulesJsonSchema>;
 
 const defaultUsesSchema = z.string();
 
-export const blockItemWrapperSchema = <T extends z.AnyZodObject>(
+type AnyObjectSchema = z.ZodObject<z.ZodRawShape>;
+
+export const blockItemWrapperSchema = <T extends AnyObjectSchema>(
   schema: T,
   usesSchema: z.ZodTypeAny = defaultUsesSchema,
 ) =>
   z.object({
     uses: usesSchema,
-    with: z.record(z.string()).optional(),
+    with: z.record(z.string(), z.string()).optional(),
     override: schema.partial().optional(),
   });
 
-export const blockOrSchema = <T extends z.AnyZodObject>(
+export const blockOrSchema = <T extends AnyObjectSchema>(
   schema: T,
   usesSchema: z.ZodTypeAny = defaultUsesSchema,
 ) => z.union([schema, blockItemWrapperSchema(schema, usesSchema)]);
@@ -107,7 +109,10 @@ export const baseConfigYamlSchema = z.object({
   name: z.string(),
   version: z.string(),
   schema: z.string().optional(),
-  metadata: z.record(z.string()).and(commonMetadataSchema.partial()).optional(),
+  metadata: z
+    .record(z.string(), z.string())
+    .and(commonMetadataSchema.partial())
+    .optional(),
   env: envRecord.optional(),
   requestOptions: requestOptionsSchema.optional(),
 });
@@ -123,7 +128,7 @@ export const configYamlSchema = baseConfigYamlSchema.extend({
         modelSchema,
         z.object({
           uses: modelsUsesSchema,
-          with: z.record(z.string()).optional(),
+          with: z.record(z.string(), z.string()).optional(),
           override: partialModelSchema.optional(),
         }),
       ]),
@@ -138,7 +143,7 @@ export const configYamlSchema = baseConfigYamlSchema.extend({
         ruleSchema,
         z.object({
           uses: defaultUsesSchema,
-          with: z.record(z.string()).optional(),
+          with: z.record(z.string(), z.string()).optional(),
         }),
       ]),
     )

@@ -3,15 +3,40 @@ import * as vscode from "vscode";
 import { GhostTextAcceptanceTracker } from "./GhostTextAcceptanceTracker";
 
 // Mock the vscode module
-vi.mock("vscode", () => ({
-  Position: vi.fn((line: number, character: number) => ({
-    line,
-    character,
-    isEqual: vi.fn(
-      (other: any) => other.line === line && other.character === character,
-    ),
-  })),
-  Range: vi.fn((start: any, end: any) => ({ start, end })),
+vi.mock("vscode", () => {
+  class Position {
+    constructor(
+      public line: number,
+      public character: number,
+    ) {}
+
+    isEqual(other: any) {
+      return this.line === other.line && this.character === other.character;
+    }
+  }
+
+  class Range {
+    constructor(
+      public start: any,
+      public end: any,
+    ) {}
+  }
+
+  return {
+    Position,
+    Range,
+  };
+});
+
+vi.mock("../activation/SelectionChangeManager", () => ({
+  HandlerPriority: {
+    HIGH: 4,
+  },
+  SelectionChangeManager: {
+    getInstance: vi.fn(() => ({
+      registerListener: vi.fn(),
+    })),
+  },
 }));
 
 describe("GhostTextAcceptanceTracker", () => {

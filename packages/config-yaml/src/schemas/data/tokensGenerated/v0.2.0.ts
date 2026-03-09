@@ -1,6 +1,7 @@
+import type { AnyZodObject } from "../base.js";
 import { tokensGeneratedEventAllSchema } from "./index.js";
 
-export const tokensGeneratedEventSchema_0_2_0 =
+export const tokensGeneratedEventSchema_0_2_0: AnyZodObject =
   tokensGeneratedEventAllSchema.pick({
     // base
     timestamp: true,
@@ -17,5 +18,5 @@ export const tokensGeneratedEventSchema_0_2_0 =
     generatedTokens: true,
   });
 
-export const tokensGeneratedEventSchema_0_2_0_noCode =
+export const tokensGeneratedEventSchema_0_2_0_noCode: AnyZodObject =
   tokensGeneratedEventSchema_0_2_0;

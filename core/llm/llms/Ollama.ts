@@ -166,6 +166,11 @@ class Ollama extends BaseLLM implements ModelInstaller {
     if (options.model === "AUTODETECT") {
       return;
     }
+
+    if (process.env.NODE_ENV === "test") {
+      return;
+    }
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };

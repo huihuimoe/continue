@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { ChatCompletionChunk } from "openai/resources/index.js";
-import type {
-  ChatCompletionAssistantMessageParam,
-  ChatCompletionMessageParam,
-} from "openai/resources/index.js";
+import type { ChatCompletionAssistantMessageParam, ChatCompletionChunk, ChatCompletionMessageParam } from "openai/resources/index.js";
 import type {
   Response,
   ResponseCompletedEvent,
@@ -335,6 +331,7 @@ describe("fromResponsesChunk", () => {
       sequence_number: 4,
       item_id: "tool_item_1",
       output_index: 0,
+      name: "searchDocs",
       arguments: '{"query":"vitest"}',
     };
     const toolOutputDone: ResponseOutputItemDoneEvent = {

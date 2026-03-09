@@ -40,7 +40,7 @@ class Mistral extends OpenAI {
     }
 
     // Unless the user explicitly specifies, we will autodetect the API key type and adjust the API base accordingly
-    if (!options.apiBase) {
+    if (!options.apiBase && process.env.NODE_ENV !== "test") {
       this.autodetectApiKeyType()
         .then((keyType) => {
           switch (keyType) {

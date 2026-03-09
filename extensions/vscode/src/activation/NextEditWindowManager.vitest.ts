@@ -119,6 +119,17 @@ vi.mock("core/nextEdit/diff/diff", () => ({
   getOffsetPositionAtLastNewLine: vi.fn(() => ({ line: 0, character: 0 })),
 }));
 
+vi.mock("./SelectionChangeManager", () => ({
+  HandlerPriority: {
+    CRITICAL: 5,
+  },
+  SelectionChangeManager: {
+    getInstance: vi.fn(() => ({
+      registerListener: vi.fn(),
+    })),
+  },
+}));
+
 // Import after mocks are set up
 import * as vscode from "vscode";
 

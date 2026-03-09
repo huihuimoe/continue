@@ -75,11 +75,12 @@ export async function killTerminalProcess(toolCallId: string): Promise<void> {
     process.kill("SIGTERM");
 
     // Force kill after 5 seconds if still running
-    setTimeout(() => {
+    const forceKillTimer = setTimeout(() => {
       if (!process.killed) {
         process.kill("SIGKILL");
       }
     }, 5000);
+    forceKillTimer.unref();
 
     processTerminalForegroundStates.delete(toolCallId);
   }
