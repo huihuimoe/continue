@@ -27,23 +27,6 @@ const dedupedDependencies = [
     filter: /^zod(?:\/.*)?$/,
     resolvePath: (specifier) => resolveFromCore(specifier),
   },
-  {
-    filter: /^node-fetch(?:\/.*)?$/,
-    resolvePath: (specifier) => resolveFromCore(specifier),
-  },
-  {
-    filter: /^fetch-blob(?:\/.*)?$/,
-    resolvePath: (specifier) => resolveFromCore(specifier),
-  },
-  {
-    filter: /^formdata-polyfill\/esm\.min\.js$/,
-    resolvePath: (specifier) => resolveFromCore(specifier),
-  },
-  {
-    filter: /^web-streams-polyfill\/dist\/ponyfill\.es2018\.js$/,
-    resolvePath: () =>
-      resolveFromCore("web-streams-polyfill/dist/ponyfill.es2018.js"),
-  },
 ];
 
 const dedupePlugin = {

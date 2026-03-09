@@ -154,6 +154,30 @@ async function startHttpServer(): Promise<http.Server> {
         res.writeHead(200, { "Content-Type": "text/plain" });
         res.end("Slow response");
       }, 100);
+    } else if (url.pathname === "/slow-stream") {
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.write("chunk-1");
+      setTimeout(() => {
+        res.end("chunk-2");
+      }, 1000);
+    } else if (url.pathname === "/redirect") {
+      res.writeHead(302, { Location: "/redirect-target" });
+      res.end();
+    } else if (url.pathname === "/redirect-target") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+      req.on("end", () => {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            message: "Redirect target reached",
+            method: req.method,
+            body,
+          }),
+        );
+      });
     } else {
       res.writeHead(404);
       res.end("Not Found");
@@ -271,6 +295,35 @@ describe("fetchwithRequestOptions E2E tests", () => {
 
       expect(response.status).toBe(404);
       expect(response.ok).toBe(false);
+    });
+
+    test("should follow a 302 redirect and return the final 200 response", async () => {
+      await startHttpServer();
+
+      const response = await fetchwithRequestOptions(
+        `http://localhost:${HTTP_PORT}/redirect`,
+        {
+          method: "POST",
+          body: "payload",
+          headers: { "Content-Type": "text/plain" },
+        },
+        {
+          timeout: 1,
+        },
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.url).toContain("/redirect-target");
+      const data = (await response.json()) as {
+        message: string;
+        method: string;
+        body: string;
+      };
+      expect(data).toEqual({
+        message: "Redirect target reached",
+        method: "GET",
+        body: "",
+      });
     });
   });
 
@@ -502,6 +555,60 @@ Just some random text that looks like a cert
   });
 
   describe("Error handling", () => {
+    test("should return 499 response when request is aborted in compatibility transport", async () => {
+      await startHttpServer();
+
+      const controller = new AbortController();
+      controller.abort();
+
+      const response = await fetchwithRequestOptions(
+        `http://localhost:${HTTP_PORT}/slow`,
+        {
+          signal: controller.signal,
+        },
+        {
+          timeout: 1,
+        },
+      );
+
+      expect(response.status).toBe(499);
+      expect(response.statusText).toBe("Client Closed Request");
+    });
+
+    test("should not abort a delayed response solely due to requestOptions timeout", async () => {
+      await startHttpServer();
+
+      const response = await fetchwithRequestOptions(
+        `http://localhost:${HTTP_PORT}/slow`,
+        {},
+        {
+          timeout: 0.01,
+        },
+      );
+
+      expect(response.status).toBe(200);
+    });
+
+    test("should surface a stalled compatibility-stream body timeout when requestOptions timeout elapses", async () => {
+      await startHttpServer();
+
+      const response = await fetchwithRequestOptions(
+        `http://localhost:${HTTP_PORT}/slow-stream`,
+        {},
+        {
+          timeout: 0.05,
+        },
+      );
+
+      expect(response.status).toBe(200);
+
+      await expect(response.text()).rejects.toMatchObject({
+        cause: expect.objectContaining({
+          code: "UND_ERR_BODY_TIMEOUT",
+        }),
+      });
+    });
+
     test("should handle network errors gracefully", async () => {
       // Try to connect to a non-existent server
       await expect(

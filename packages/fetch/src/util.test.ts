@@ -1,5 +1,6 @@
 import { afterEach, expect, test, vi } from "vitest";
 import {
+  getProxy,
   getProxyFromEnv,
   patternMatchesHostname,
   shouldBypassProxy,
@@ -54,6 +55,13 @@ test("getProxyFromEnv prefers HTTPS_PROXY over other env vars for https protocol
   process.env.HTTP_PROXY = "http://notused2.example.com";
   process.env.http_proxy = "http://notused3.example.com";
   expect(getProxyFromEnv("https:")).toBe("https://preferred.example.com");
+});
+
+test("getProxy prefers requestOptions proxy over environment variables", () => {
+  process.env.HTTPS_PROXY = "https://env-proxy.example.com";
+  expect(
+    getProxy("https:", { proxy: "https://request-options-proxy.example.com" }),
+  ).toBe("https://request-options-proxy.example.com");
 });
 
 // Tests for patternMatchesHostname
@@ -192,12 +200,17 @@ test("shouldBypassProxy accepts options with noProxy patterns", () => {
 });
 
 test("shouldBypassProxy combines environment and options noProxy patterns", () => {
-  process.env.NO_PROXY = "example.org,*.test.com";
-  const options = { noProxy: ["example.com:8080", "*.internal.net"] };
-  expect(shouldBypassProxy("example.org", options)).toBe(true);
+  process.env.NO_PROXY = " example.org:8443 , *.test.com ";
+  const options = { noProxy: ["example.com:8080", "*.internal.net:3000"] };
+  expect(shouldBypassProxy("example.org", options)).toBe(false);
+  expect(shouldBypassProxy("example.org:8443", options)).toBe(true);
+  expect(shouldBypassProxy("example.org:443", options)).toBe(false);
   expect(shouldBypassProxy("sub.test.com", options)).toBe(true);
   expect(shouldBypassProxy("example.com:8080", options)).toBe(true);
-  expect(shouldBypassProxy("server.internal.net", options)).toBe(true);
+  expect(shouldBypassProxy("example.com:9090", options)).toBe(false);
+  expect(shouldBypassProxy("api.internal.net:3000", options)).toBe(true);
+  expect(shouldBypassProxy("api.internal.net:4000", options)).toBe(false);
+  expect(shouldBypassProxy("server.internal.net", options)).toBe(false);
   expect(shouldBypassProxy("other.domain", options)).toBe(false);
 });
 

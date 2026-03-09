@@ -1,25 +1,10 @@
 import { RequestOptions } from "@continuedev/config-types";
-import * as followRedirects from "follow-redirects";
-import { HttpProxyAgent } from "http-proxy-agent";
-import { HttpsProxyAgent } from "https-proxy-agent";
-import { getAgentOptions } from "./getAgentOptions.js";
+import { createCompatTransport } from "./compatTransport.js";
 import { getProxy, shouldBypassProxy } from "./util.js";
 
-const { http, https } = (followRedirects as any).default;
-
 type CompatRequestInit = RequestInit & {
-  agent?: unknown;
+  dispatcher?: unknown;
 };
-
-type CompatFetch = (
-  input: URL | string | Request,
-  init?: CompatRequestInit,
-) => Promise<Response>;
-
-async function loadPatchedFetch(): Promise<CompatFetch> {
-  const module = await import("./node-fetch-patch.js");
-  return module.default as CompatFetch;
-}
 
 function requiresCompatibilityTransport(
   requestOptions: RequestOptions | undefined,
@@ -113,6 +98,118 @@ function logError(error: unknown) {
   console.log("===================");
 }
 
+function once<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => Promise<void>,
+): (...args: TArgs) => Promise<void> {
+  let pending: Promise<void> | undefined;
+
+  return async (...args: TArgs) => {
+    if (!pending) {
+      pending = fn(...args);
+    }
+
+    await pending;
+  };
+}
+
+async function safeCloseCompatTransport(close: () => Promise<void>) {
+  try {
+    await close();
+  } catch (error) {
+    if (process.env.VERBOSE_FETCH) {
+      logError(error);
+    }
+  }
+}
+
+async function wrapCompatResponse(
+  response: Response,
+  close: () => Promise<void>,
+): Promise<Response> {
+  const cleanup = once(safeCloseCompatTransport.bind(null, close));
+
+  if (!response.body) {
+    await cleanup();
+    return response;
+  }
+
+  const [callerBody, cleanupBody] = response.body.tee();
+  const reader = callerBody.getReader();
+  const cleanupReader = cleanupBody.getReader();
+
+  async function drainCleanupBranch() {
+    try {
+      while (true) {
+        const { done } = await cleanupReader.read();
+        if (done) {
+          break;
+        }
+      }
+    } catch {
+    } finally {
+      await cleanup();
+    }
+  }
+
+  const cleanupTimer = setTimeout(() => {
+    void drainCleanupBranch();
+  }, 0);
+
+  const wrappedBody = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          clearTimeout(cleanupTimer);
+          controller.close();
+          await cleanupReader.cancel();
+          await cleanup();
+          return;
+        }
+
+        controller.enqueue(value);
+      } catch (error) {
+        clearTimeout(cleanupTimer);
+        controller.error(error);
+        await cleanupReader.cancel(error);
+        await cleanup();
+      }
+    },
+    async cancel(reason) {
+      clearTimeout(cleanupTimer);
+      try {
+        await Promise.allSettled([
+          reader.cancel(reason),
+          cleanupReader.cancel(reason),
+        ]);
+      } finally {
+        await cleanup();
+      }
+    },
+  });
+
+  const wrappedResponse = new Response(wrappedBody, {
+    headers: response.headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
+
+  Object.defineProperties(wrappedResponse, {
+    url: {
+      value: response.url,
+    },
+    redirected: {
+      value: response.redirected,
+    },
+    type: {
+      value: response.type,
+    },
+  });
+
+  return wrappedResponse;
+}
+
 export async function fetchwithRequestOptions(
   url_: URL | string,
   init?: RequestInit,
@@ -127,7 +224,7 @@ export async function fetchwithRequestOptions(
   const proxy = getProxy(url.protocol, requestOptions);
 
   // Check if should bypass proxy based on requestOptions or NO_PROXY env var
-  const shouldBypass = shouldBypassProxy(url.hostname, requestOptions);
+  const shouldBypass = shouldBypassProxy(url.host, requestOptions);
 
   let headers: { [key: string]: string } = {};
 
@@ -189,16 +286,11 @@ export async function fetchwithRequestOptions(
     });
   }
 
-  const agentOptions = await getAgentOptions(requestOptions);
-
-  // Create agent
-  const protocol = url.protocol === "https:" ? https : http;
-  const agent =
-    proxy && !shouldBypass
-      ? protocol === https
-        ? new HttpsProxyAgent(proxy, agentOptions)
-        : new HttpProxyAgent(proxy, agentOptions)
-      : new protocol.Agent(agentOptions);
+  const transport = await createCompatTransport(
+    url,
+    requestOptions,
+    init?.signal,
+  );
 
   // Verbose logging for debugging - log request details
   if (process.env.VERBOSE_FETCH) {
@@ -207,13 +299,13 @@ export async function fetchwithRequestOptions(
 
   // fetch the request with the provided options
   try {
-    const patchedFetch = await loadPatchedFetch();
-    const resp = await patchedFetch(url, {
+    const resp = await globalThis.fetch(url, {
       ...init,
       body: finalBody,
-      headers: headers,
-      agent: agent,
-    });
+      headers,
+      dispatcher: transport.dispatcher,
+      signal: transport.signal,
+    } as CompatRequestInit);
 
     // Verbose logging for debugging - log response details
     if (process.env.VERBOSE_FETCH) {
@@ -227,7 +319,7 @@ export async function fetchwithRequestOptions(
       }
     }
 
-    return resp;
+    return await wrapCompatResponse(resp, transport.close);
   } catch (error) {
     // Verbose logging for errors
     if (process.env.VERBOSE_FETCH) {
@@ -235,12 +327,16 @@ export async function fetchwithRequestOptions(
     }
 
     if (error instanceof Error && error.name === "AbortError") {
+      await safeCloseCompatTransport(transport.close);
+
       // Return a Response object that streamResponse etc can handle
       return new Response(null, {
         status: 499, // Client Closed Request
         statusText: "Client Closed Request",
       });
     }
+
+    await safeCloseCompatTransport(transport.close);
     throw error;
   }
 }

@@ -13,13 +13,11 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@continuedev/config-types": "^1.0.14",
-    "follow-redirects": "^1.15.6",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.5",
-    "node-fetch": "^3.3.2"
+    "undici": "^7.16.0"
   },
   "devDependencies": {
-    "@types/follow-redirects": "^1.14.4",
     "typescript": "^5.0.0",
     "vitest": "^3.2.0",
     "@semantic-release/changelog": "^6.0.3",

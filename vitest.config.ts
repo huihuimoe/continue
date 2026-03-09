@@ -1,11 +1,18 @@
 import * as path from "node:path";
 
-const extensionRoot = path.resolve(__dirname, "extensions", "vscode");
+const workspaceRoot = __dirname;
+const extensionRoot = path.resolve(workspaceRoot, "extensions", "vscode");
+const localPrefix = process.env.npm_config_local_prefix;
+
+const root =
+  localPrefix && localPrefix.startsWith(workspaceRoot)
+    ? localPrefix
+    : extensionRoot;
 
 export default {
-  root: extensionRoot,
+  root,
   test: {
-    include: ["**/*.vitest.ts"],
+    include: ["**/*.vitest.ts", "**/*.{test,spec}.?(c|m)[jt]s?(x)"],
     environment: "node",
   },
 };

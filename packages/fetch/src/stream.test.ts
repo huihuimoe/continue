@@ -1,6 +1,6 @@
 import { Readable } from "stream";
 import { describe, expect, it, test } from "vitest";
-import { parseDataLine, streamSse } from "./stream.js";
+import { parseDataLine, streamResponse, streamSse } from "./stream.js";
 
 function createMockResponse(sseLines: string[]): Response {
   // Create a Readable stream that emits the SSE lines
@@ -21,7 +21,56 @@ function createMockResponse(sseLines: string[]): Response {
   } as unknown as Response;
 }
 
+function createNativeResponse(chunks: string[]): Response {
+  const encoder = new TextEncoder();
+
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    }),
+    {
+      status: 200,
+    },
+  );
+}
+
+describe("streamResponse", () => {
+  it("consumes a native Response body split across chunks", async () => {
+    const response = createNativeResponse(["hel", "lo ", "world"]);
+    const results = [];
+
+    for await (const value of streamResponse(response)) {
+      results.push(value);
+    }
+
+    expect(results.join("")).toBe("hello world");
+  });
+});
+
 describe("streamSse", () => {
+  it("yields parsed SSE data objects from a native Response split across chunk boundaries", async () => {
+    const response = createNativeResponse([
+      'data: {"foo":',
+      '"bar"}\n',
+      "\n",
+      'data: {"baz":',
+      "42}\n\n",
+      "data: [DONE]\n",
+    ]);
+
+    const results = [];
+    for await (const data of streamSse(response)) {
+      results.push(data);
+    }
+
+    expect(results).toEqual([{ foo: "bar" }, { baz: 42 }]);
+  });
+
   it("yields parsed SSE data objects that ends with `data:[DONE]`", async () => {
     const sseLines = [
       'data: {"foo": "bar"}',

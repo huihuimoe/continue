@@ -1,13 +1,17 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import { expect, vi } from "vitest";
 
 import Parser from "web-tree-sitter";
 import { Position } from "../../../..";
 import { testIde } from "../../../../test/fixtures";
+import { localPathOrUriToPath } from "../../../../util/pathToUri";
 import { getAst, getTreePathAtCursor } from "../../../util/ast";
 import { ImportDefinitionsService } from "../../ImportDefinitionsService";
 import { RootPathContextService } from "../RootPathContextService";
+
+const TEST_FIXTURES_DIR = fileURLToPath(new URL(".", import.meta.url));
 
 function splitTextAtPosition(
   fileContent: string,
@@ -44,21 +48,7 @@ export async function testRootPathContext(
       return [];
     });
 
-  // Copy the folder to the test directory
-  const folderPath = path.join(
-    process.cwd(),
-    "autocomplete",
-    "context",
-    "root-path-context",
-    "test",
-    folderName,
-  );
-  const workspaceDir = (await ide.getWorkspaceDirs())[0];
-  const testFolderPath = path.join(workspaceDir, folderName);
-  fs.cpSync(folderPath, testFolderPath, {
-    recursive: true,
-    force: true,
-  });
+  const testFolderPath = await copyRootPathContextTestFolder(folderName);
 
   // Get results of root path context
   const startPath = path.join(testFolderPath, relativeFilepath);
@@ -87,4 +77,19 @@ export async function testRootPathContext(
       expect.any(String), // language argument
     );
   });
+}
+
+export async function copyRootPathContextTestFolder(folderName: string) {
+  const folderPath = path.join(TEST_FIXTURES_DIR, folderName);
+  const workspaceDir = localPathOrUriToPath(
+    (await testIde.getWorkspaceDirs())[0],
+  );
+  const testFolderPath = path.join(workspaceDir, folderName);
+
+  fs.cpSync(folderPath, testFolderPath, {
+    recursive: true,
+    force: true,
+  });
+
+  return testFolderPath;
 }

@@ -475,7 +475,7 @@ export abstract class BaseLLM implements ILLM {
           );
         } else {
           if (e.name !== "AbortError") {
-            // Don't pollute console with abort errors. Check on name instead of instanceof, to avoid importing node-fetch here
+            // Don't pollute console with abort errors. Check on name instead of instanceof, to avoid importing the fetch shim here
             console.debug(
               `${e.message}\n\nCode: ${e.code}\nError number: ${e.errno}\nSyscall: ${e.erroredSysCall}\nType: ${e.type}\n\n${e.stack}`,
             );
