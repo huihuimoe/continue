@@ -2,12 +2,46 @@ import { RequestOptions } from "@continuedev/config-types";
 import * as followRedirects from "follow-redirects";
 import { HttpProxyAgent } from "http-proxy-agent";
 import { HttpsProxyAgent } from "https-proxy-agent";
-import { BodyInit, RequestInit, Response } from "node-fetch";
 import { getAgentOptions } from "./getAgentOptions.js";
-import patchedFetch from "./node-fetch-patch.js";
 import { getProxy, shouldBypassProxy } from "./util.js";
 
 const { http, https } = (followRedirects as any).default;
+
+type CompatRequestInit = RequestInit & {
+  agent?: unknown;
+};
+
+type CompatFetch = (
+  input: URL | string | Request,
+  init?: CompatRequestInit,
+) => Promise<Response>;
+
+async function loadPatchedFetch(): Promise<CompatFetch> {
+  const module = await import("./node-fetch-patch.js");
+  return module.default as CompatFetch;
+}
+
+function requiresCompatibilityTransport(
+  requestOptions: RequestOptions | undefined,
+  proxy: string | undefined,
+  shouldBypass: boolean,
+): boolean {
+  if (proxy && !shouldBypass) {
+    return true;
+  }
+
+  if (!requestOptions) {
+    return false;
+  }
+
+  return Boolean(
+    requestOptions.timeout !== undefined ||
+      requestOptions.verifySsl !== undefined ||
+      requestOptions.caBundlePath ||
+      requestOptions.clientCertificate ||
+      requestOptions.noProxy?.length,
+  );
+}
 
 function logRequest(
   method: string,
@@ -89,22 +123,11 @@ export async function fetchwithRequestOptions(
     url.host = "127.0.0.1";
   }
 
-  const agentOptions = await getAgentOptions(requestOptions);
-
   // Get proxy from options or environment variables
   const proxy = getProxy(url.protocol, requestOptions);
 
   // Check if should bypass proxy based on requestOptions or NO_PROXY env var
   const shouldBypass = shouldBypassProxy(url.hostname, requestOptions);
-
-  // Create agent
-  const protocol = url.protocol === "https:" ? https : http;
-  const agent =
-    proxy && !shouldBypass
-      ? protocol === https
-        ? new HttpsProxyAgent(proxy, agentOptions)
-        : new HttpProxyAgent(proxy, agentOptions)
-      : new protocol.Agent(agentOptions);
 
   let headers: { [key: string]: string } = {};
 
@@ -158,6 +181,25 @@ export async function fetchwithRequestOptions(
   const finalBody = updatedBody ?? init?.body;
   const method = init?.method || "GET";
 
+  if (!requiresCompatibilityTransport(requestOptions, proxy, shouldBypass)) {
+    return globalThis.fetch(url, {
+      ...init,
+      body: finalBody,
+      headers,
+    });
+  }
+
+  const agentOptions = await getAgentOptions(requestOptions);
+
+  // Create agent
+  const protocol = url.protocol === "https:" ? https : http;
+  const agent =
+    proxy && !shouldBypass
+      ? protocol === https
+        ? new HttpsProxyAgent(proxy, agentOptions)
+        : new HttpProxyAgent(proxy, agentOptions)
+      : new protocol.Agent(agentOptions);
+
   // Verbose logging for debugging - log request details
   if (process.env.VERBOSE_FETCH) {
     logRequest(method, url, headers, finalBody, proxy, shouldBypass);
@@ -165,6 +207,7 @@ export async function fetchwithRequestOptions(
 
   // fetch the request with the provided options
   try {
+    const patchedFetch = await loadPatchedFetch();
     const resp = await patchedFetch(url, {
       ...init,
       body: finalBody,

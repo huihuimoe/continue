@@ -1,5 +1,5 @@
 import { RequestOptions } from "@continuedev/config-types";
-import { fetchwithRequestOptions, patchedFetch } from "@continuedev/fetch";
+import { fetchwithRequestOptions } from "@continuedev/fetch";
 import {
   ChatCompletionChunk,
   CompletionUsage,
@@ -7,6 +7,8 @@ import {
 } from "openai/resources/index";
 
 import { ChatCompletion } from "openai/resources/index.js";
+
+type FetchFn = (req: URL | string | Request, init?: any) => Promise<any>;
 
 export function chatChunk(options: {
   content: string | null | undefined;
@@ -114,9 +116,9 @@ export function model(options: { id: string; owned_by?: string }): Model {
 
 export function customFetch(
   requestOptions: RequestOptions | undefined,
-): typeof patchedFetch {
+): FetchFn {
   if (process.env.FEATURE_FLAG_DISABLE_CUSTOM_FETCH) {
-    return patchedFetch;
+    return globalThis.fetch.bind(globalThis) as FetchFn;
   }
 
   function letRequestOptionsOverrideAuthHeaders(init: any): any {

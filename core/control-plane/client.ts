@@ -8,16 +8,12 @@ import {
   SecretResult,
   SecretType,
 } from "@continuedev/config-yaml";
-import fetch, { RequestInit, Response } from "node-fetch";
 
 import { OrganizationDescription } from "../config/ProfileLifecycleManager.js";
 import { ChatHistoryItem, IDE, ModelDescription } from "../index.js";
 import { Logger } from "../util/Logger.js";
 
-import {
-  ControlPlaneSessionInfo,
-  isOnPremSession,
-} from "./AuthTypes.js";
+import { ControlPlaneSessionInfo, isOnPremSession } from "./AuthTypes.js";
 import { getControlPlaneEnv } from "./env.js";
 
 export interface PolicyResponse {
@@ -43,11 +39,7 @@ export interface CreditStatus {
 export const TRIAL_PROXY_URL =
   "https://proxy-server-blue-l6vsfbzhba-uw.a.run.app";
 
-export type ControlPlaneMessageMode =
-  | "chat"
-  | "agent"
-  | "plan"
-  | "background";
+export type ControlPlaneMessageMode = "chat" | "agent" | "plan" | "background";
 
 export interface ControlPlaneSessionUsage {
   completionTokens: number;

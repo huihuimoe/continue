@@ -1,10 +1,61 @@
 const fs = require("fs");
+const path = require("path");
 
 const { writeBuildTimestamp } = require("./write-build-timestamp");
 
 const esbuild = require("esbuild");
 
 const flags = process.argv.slice(2);
+const corePackageRoot = path.resolve(__dirname, "../../../core");
+const localFetchPackageEntry = path.resolve(
+  __dirname,
+  "../../../packages/fetch/dist/index.js",
+);
+
+function resolveFromCore(specifier) {
+  return require.resolve(specifier, {
+    paths: [corePackageRoot],
+  });
+}
+
+const dedupedDependencies = [
+  {
+    filter: /^@continuedev\/fetch$/,
+    resolvePath: () => localFetchPackageEntry,
+  },
+  {
+    filter: /^zod(?:\/.*)?$/,
+    resolvePath: (specifier) => resolveFromCore(specifier),
+  },
+  {
+    filter: /^node-fetch(?:\/.*)?$/,
+    resolvePath: (specifier) => resolveFromCore(specifier),
+  },
+  {
+    filter: /^fetch-blob(?:\/.*)?$/,
+    resolvePath: (specifier) => resolveFromCore(specifier),
+  },
+  {
+    filter: /^formdata-polyfill\/esm\.min\.js$/,
+    resolvePath: (specifier) => resolveFromCore(specifier),
+  },
+  {
+    filter: /^web-streams-polyfill\/dist\/ponyfill\.es2018\.js$/,
+    resolvePath: () =>
+      resolveFromCore("web-streams-polyfill/dist/ponyfill.es2018.js"),
+  },
+];
+
+const dedupePlugin = {
+  name: "dedupe-shared-dependencies",
+  setup(build) {
+    for (const dependency of dedupedDependencies) {
+      build.onResolve({ filter: dependency.filter }, (args) => ({
+        path: dependency.resolvePath(args.path),
+      }));
+    }
+  },
+};
 
 const esbuildConfig = {
   entryPoints: ["src/extension.ts"],
@@ -26,6 +77,7 @@ const esbuildConfig = {
   supported: { "dynamic-import": false },
   metafile: true,
   plugins: [
+    dedupePlugin,
     {
       name: "on-end-plugin",
       setup(build) {
