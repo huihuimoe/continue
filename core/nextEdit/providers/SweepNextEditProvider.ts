@@ -44,9 +44,9 @@ export class SweepNextEditProvider extends BaseNextEditModelProvider {
     completion = completion.replace(/^<\|file_sep\|>updated\/[^\n]*\n?/, "");
     completion = completion.split("\n<|file_sep|>")[0] ?? completion;
     completion = completion.split("</s>")[0] ?? completion;
+    completion = completion.replace(/^\n+/, "").replace(/\n+$/, "");
 
     return completion
-      .trim()
       .split("\n")
       .slice(0, SWEEP_REWRITE_WINDOW_LINE_COUNT)
       .join("\n");
@@ -216,7 +216,35 @@ export class SweepNextEditProvider extends BaseNextEditModelProvider {
       return context.helper.fileContents;
     }
 
-    return this.renderDiffVersion(metadata, "original");
+    if (metadata.isNew) {
+      return "";
+    }
+
+    return this.reconstructOriginalFileContent(
+      context.helper.fileContents,
+      metadata,
+    );
+  }
+
+  private reconstructOriginalFileContent(
+    currentFileContent: string,
+    metadata: DiffMetadata,
+  ): string {
+    const originalLines = currentFileContent.split("\n");
+
+    for (const hunk of [...(metadata.hunks ?? [])].reverse()) {
+      const currentStart = Math.max(hunk.newStart - 1, 0);
+      const currentLength = hunk.lines.filter(
+        (line) => line.type !== "deletion",
+      ).length;
+      const originalHunkLines = hunk.lines
+        .filter((line) => line.type !== "addition")
+        .map((line) => line.content);
+
+      originalLines.splice(currentStart, currentLength, ...originalHunkLines);
+    }
+
+    return originalLines.join("\n");
   }
 
   private toPromptPath(filepath: string, workspaceUris: string[]): string {

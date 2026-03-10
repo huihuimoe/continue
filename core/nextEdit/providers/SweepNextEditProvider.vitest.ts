@@ -14,9 +14,17 @@ function buildLines(prefix: string, lineCount: number): string {
   ).join("\n");
 }
 
-function buildContext(): ModelSpecificContext {
-  const currentFileContent = buildLines("current-", 40);
-  const originalFileContent = buildLines("original-", 40);
+function buildContext(overrides?: {
+  currentFileContent?: string;
+  originalFileContent?: string;
+  cursorLine?: number;
+  historyContextLines?: number;
+}): ModelSpecificContext {
+  const currentFileContent =
+    overrides?.currentFileContent ?? buildLines("current-", 40);
+  const originalFileContent =
+    overrides?.originalFileContent ?? buildLines("original-", 40);
+  const cursorLine = overrides?.cursorLine ?? 20;
 
   return {
     helper: {
@@ -24,7 +32,7 @@ function buildContext(): ModelSpecificContext {
       fileLines: currentFileContent.split("\n"),
       filepath: "file:///workspace/src/example.ts",
       workspaceUris: ["file:///workspace"],
-      pos: { line: 20, character: 0 },
+      pos: { line: cursorLine, character: 0 },
       lang: { name: "typescript" },
       modelName: NEXT_EDIT_MODELS.SWEEP_NEXT_EDIT,
       input: {
@@ -67,7 +75,7 @@ function buildContext(): ModelSpecificContext {
       afterContent: currentFileContent,
       filePath: "file:///workspace/src/example.ts",
       diffType: DiffFormatType.Unified,
-      contextLines: 40,
+      contextLines: overrides?.historyContextLines ?? 40,
       workspaceDir: "file:///workspace",
     }),
   };
@@ -109,6 +117,39 @@ describe("SweepNextEditProvider", () => {
         `<|file_sep|>updated/src/example.ts\n${rewrittenBody}\n<|file_sep|>src/ignored.ts\nignored`,
       ),
     ).toBe(rewrittenBody);
+  });
+
+  it("reconstructs original window content from compact history diffs", () => {
+    const provider = new SweepNextEditProvider();
+    const originalLines = Array.from({ length: 40 }, (_, index) => `line-${index}`);
+    const currentLines = [...originalLines];
+    currentLines[20] = "line-20-updated";
+
+    const metadata = provider.buildPromptMetadata(
+      buildContext({
+        originalFileContent: originalLines.join("\n"),
+        currentFileContent: currentLines.join("\n"),
+        historyContextLines: 3,
+      }),
+    );
+
+    const expectedOriginalWindow = originalLines.slice(10, 31).join("\n");
+
+    expect(metadata.prompt.content).toContain(
+      `<|file_sep|>original/src/example.ts\n${expectedOriginalWindow}`,
+    );
+    expect(metadata.userExcerpts).toContain(expectedOriginalWindow);
+  });
+
+  it("preserves indentation on the first extracted completion line", () => {
+    const provider = new SweepNextEditProvider();
+    const indentedBody = "    if (ready) {\n      run();\n    }";
+
+    expect(
+      provider.extractCompletion(
+        `<|file_sep|>updated/src/example.ts\n${indentedBody}\n</s>`,
+      ),
+    ).toBe(indentedBody);
   });
 
   it("factory selects the sweep provider for supported model names", () => {
